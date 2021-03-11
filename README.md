@@ -1,3 +1,5 @@
+(*this repository is still under development*)
+
 # Pitch-spelling and Key Signature estimation
 Predict the correct pitch spelling and the key signature given a list of MIDI notes.
 
