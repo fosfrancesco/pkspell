@@ -4,6 +4,7 @@ scikit-learn
 numpy
 music21
 torchvision
+tensorboard
 numba
 kmeans1d
 jenkspy

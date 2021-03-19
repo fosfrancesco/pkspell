@@ -289,7 +289,7 @@ optimizer = torch.optim.SGD(
 )
 from train import training_loop
 
-history = training_loop(model, optimizer, train_dataloader, val_dataloader, 1)
+history = training_loop(model, optimizer, train_dataloader, epochs=5, val_dataloader=val_dataloader)
 
 # After the final evaluation, we print more detailed evaluation statistics,
 plt.plot(history["train_loss"])
