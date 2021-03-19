@@ -183,6 +183,7 @@ for chrom, diat, ks, seq_len in train_dataset:
 
 
 # %%
+from datasets import pad_collate
 data_loader = DataLoader(
     dataset=validation_dataset,
     num_workers=1,
