@@ -1,12 +1,17 @@
+import click
 import numpy as np
 import pickle
+import torch
 
+from torch.utils.data import DataLoader
 from sklearn.metrics import accuracy_score
 
 from datasets import PSDataset
 from datasets import transform_chrom
 from datasets import transform_diat
 from datasets import transform_key
+from datasets import pad_collate
+
 
 def evaluate(model, dataset_path, device=None):
     # load the dataset

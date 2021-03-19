@@ -2,7 +2,9 @@ import kmeans1d
 import numpy as np
 import torch
 from torch.utils.data import Dataset
+from torch.nn.utils.rnn import pad_sequence
 from torchvision import transforms
+
 
 from pitches import KEY_SIGNATURES, PITCHES
 from utils import PAD
@@ -172,3 +174,19 @@ transform_chrom = MultInputCompose(
     [DurationOneHotEncoder(len(midi_to_ix), N_DURATION_CLASSES), ToTensorFloat()]
 )
 transform_key = transforms.Compose([Ks2Int(), ToTensorLong()])
+
+
+def pad_collate(batch):
+    (chromatic_seq, diatonic_seq, ks_seq, l) = zip(*batch)
+
+    chromatic_seq_pad = pad_sequence(chromatic_seq, padding_value=midi_to_ix[PAD])
+    diatonic_seq_pad = pad_sequence(diatonic_seq, padding_value=pitch_to_ix[PAD])
+    ks_seq_pad = pad_sequence(ks_seq, padding_value=ks_to_ix[PAD])
+
+    # sort the sequences by length
+    seq_lengths, perm_idx = torch.Tensor(l).sort(0, descending=True)
+    chromatic_seq_pad = chromatic_seq_pad[:, perm_idx, :]
+    diatonic_seq_pad = diatonic_seq_pad[:, perm_idx]
+    ks_seq_pad = ks_seq_pad[:, perm_idx]
+
+    return chromatic_seq_pad, diatonic_seq_pad, ks_seq_pad, seq_lengths
