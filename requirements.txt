@@ -1,0 +1,9 @@
+torch
+matplotlib
+scikit-learn
+numpy
+music21
+torchvision
+numba
+kmeans1d
+jenkspy
