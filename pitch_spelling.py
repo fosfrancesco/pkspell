@@ -19,6 +19,7 @@ import numpy as np
 import sklearn
 import sklearn.model_selection
 import torch
+
 # from torchcrf import CRF
 from torchvision import transforms
 from torch.utils.data import DataLoader
@@ -136,13 +137,6 @@ from datasets import DurationOneHotEncoder, MultInputCompose
 from datasets import ks_to_ix, midi_to_ix, pitch_to_ix
 from datasets import N_DURATION_CLASSES
 from utils import PAD
-
-### Define the preprocessing pipeline
-transform_diat = transforms.Compose([Pitch2Int(), ToTensorLong()])
-transform_chrom = MultInputCompose(
-    [DurationOneHotEncoder(len(midi_to_ix), N_DURATION_CLASSES), ToTensorFloat()]
-)
-transform_key = transforms.Compose([Ks2Int(), ToTensorLong()])
 
 
 print(set([ks_to_ix[ks] for piece in dict_dataset for ks in piece["key_signatures"]]))
@@ -269,8 +263,12 @@ val_dataloader = DataLoader(
 
 # model = torch.load("./models/temp/model_temp_epoch30-to_restart.pkl")
 
-from models import (RNNMultiTagger, RNNMultNystromAttentionTagger,
-                    RNNNystromAttentionTagger, RNNTagger)
+from models import (
+    RNNMultiTagger,
+    RNNMultNystromAttentionTagger,
+    RNNNystromAttentionTagger,
+    RNNTagger,
+)
 
 # model = RNNTagger(len(midi_to_ix)+N_DURATION_CLASSES,HIDDEN_DIM,pitch_to_ix,ks_to_ix, n_layers =RNN_LAYERS)
 # model = RNNMultiTagger(len(midi_to_ix)+N_DURATION_CLASSES,HIDDEN_DIM,pitch_to_ix,ks_to_ix, n_layers =RNN_LAYERS)
