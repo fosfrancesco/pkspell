@@ -13,6 +13,8 @@ def training_loop(
             torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
         )
         print(f"Training device: {device}")
+    
+    model = model.to(device)
 
     history = defaultdict(list)
     for i_epoch in range(1, n_epochs + 1):

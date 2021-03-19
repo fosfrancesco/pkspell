@@ -1,4 +1,6 @@
 from numba import njit
+from pathlib import Path
+
 import numpy as np
 
 PAD = "<PAD>"
@@ -13,3 +15,6 @@ def closest_multiple(n: int, x: int):
 
 
 closest_multiple(6900, 2000)
+
+def root_folder(p):
+    return Path(p).parts[0]
