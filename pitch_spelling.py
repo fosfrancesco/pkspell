@@ -21,10 +21,7 @@ import sklearn.model_selection
 import torch
 
 # from torchcrf import CRF
-from torchvision import transforms
 from torch.utils.data import DataLoader
-
-# import optuna
 
 # %% [markdown]
 # # Pitch Spelling and ks Prediction
@@ -46,9 +43,7 @@ with open(Path("./asapks.pkl"), "rb") as fid:
 
 # ####### Note for Nicolas: I called it "dict_dataset", but it is a list of dictionaries
 paths = list(set([e["original_path"] for e in full_dict_dataset]))
-
-# print(paths)
-print(len(paths), "different pieces")
+print(f"{len(paths)} different pieces")
 print(
     "Average number of notes: ",
     np.mean([len(e["midi_number"]) for e in full_dict_dataset]),
@@ -120,9 +115,9 @@ print(f"Remaining composers: {composers}")
 train_composer = [composers.index(root_folder(p)) for p in path_train]
 val_composer = [composers.index(root_folder(p)) for p in path_validation]
 
-_ = plt.hist([train_composer, val_composer], label=["train", "validation"])
-_ = plt.legend(loc="upper left")
-_ = plt.xticks(list(range(len(composers))), composers)
+# _ = plt.hist([train_composer, val_composer], label=["train", "validation"])
+# _ = plt.legend(loc="upper left")
+# _ = plt.xticks(list(range(len(composers))), composers)
 
 # %% [markdown]
 # ## Transform the input into a convenient format for the Model
@@ -137,13 +132,6 @@ from datasets import DurationOneHotEncoder, MultInputCompose
 from datasets import ks_to_ix, midi_to_ix, pitch_to_ix
 from datasets import N_DURATION_CLASSES
 from utils import PAD
-
-
-print(set([ks_to_ix[ks] for piece in dict_dataset for ks in piece["key_signatures"]]))
-print(ks_to_ix[PAD])
-
-
-# %%
 
 
 # %%
@@ -166,24 +154,25 @@ validation_dataset = PSDataset(
     dict_dataset, path_validation, transform_chrom, transform_diat, transform_key, False
 )
 
-print(len(train_dataset), len(validation_dataset))
+print(f"Train pieces: {len(train_dataset)}, test pieces: {len(validation_dataset)}")
 
 
 # test if it works
-for chrom, diat, ks, seq_len in train_dataset:
-    print(chrom.shape)
-    print(ks.shape)
-    print("Division", diat.shape[0] / 65)
-    #     print(torch.argmax(chrom[0:30],1))
-    #     # print([diatonic_pitches[p.item()] for p in diat[0:30]])
-    #     print([accepted_pitches[p.item()] for p in diat[0:30]])
-    print([p.item() for p in ks[-20:]])
-    print([p for p in chrom[-10:, :]])
-    print(seq_len)
+# for chrom, diat, ks, seq_len in train_dataset:
+#     print(chrom.shape)
+#     print(ks.shape)
+#     print("Division", diat.shape[0] / 65)
+#     #     print(torch.argmax(chrom[0:30],1))
+#     #     # print([diatonic_pitches[p.item()] for p in diat[0:30]])
+#     #     print([accepted_pitches[p.item()] for p in diat[0:30]])
+#     print([p.item() for p in ks[-20:]])
+#     print([p for p in chrom[-10:, :]])
+#     print(seq_len)
 
 
 # %%
 from datasets import pad_collate
+
 data_loader = DataLoader(
     dataset=validation_dataset,
     num_workers=1,
@@ -193,10 +182,10 @@ data_loader = DataLoader(
 )
 
 # test if it work
-for batch in data_loader:
-    print(batch[0].shape, batch[1].shape, batch[2].shape)
-    print(batch[0])
-    break
+# for batch in data_loader:
+#    print(batch[0].shape, batch[1].shape, batch[2].shape)
+#    print(batch[0])
+#    break
 
 # %% [markdown]
 # ## Model Definition
@@ -253,80 +242,40 @@ from models import (
 )
 
 # model = RNNTagger(len(midi_to_ix)+N_DURATION_CLASSES,HIDDEN_DIM,pitch_to_ix,ks_to_ix, n_layers =RNN_LAYERS)
-# model = RNNMultiTagger(len(midi_to_ix)+N_DURATION_CLASSES,HIDDEN_DIM,pitch_to_ix,ks_to_ix, n_layers =RNN_LAYERS)
-# model = RNNNystromAttentionTagger(len(midi_to_ix)+N_DURATION_CLASSES,HIDDEN_DIM,pitch_to_ix,ks_to_ix, n_layers =RNN_LAYERS,num_head=NUM_HEAD,num_landmarks=NUM_LANDMARKS)
-model = RNNMultNystromAttentionTagger(
+model = RNNMultiTagger(
     len(midi_to_ix) + N_DURATION_CLASSES,
     HIDDEN_DIM,
     pitch_to_ix,
     ks_to_ix,
     n_layers=RNN_LAYERS,
-    hidden_dim2=HIDDEN_DIM2,
-    num_head=NUM_HEAD,
-    num_landmarks=NUM_LANDMARKS,
 )
+# model = RNNNystromAttentionTagger(len(midi_to_ix)+N_DURATION_CLASSES,HIDDEN_DIM,pitch_to_ix,ks_to_ix, n_layers =RNN_LAYERS,num_head=NUM_HEAD,num_landmarks=NUM_LANDMARKS)
+# model = RNNMultNystromAttentionTagger(
+#     len(midi_to_ix) + N_DURATION_CLASSES,
+#     HIDDEN_DIM,
+#     pitch_to_ix,
+#     ks_to_ix,
+#     n_layers=RNN_LAYERS,
+#     hidden_dim2=HIDDEN_DIM2,
+#     num_head=NUM_HEAD,
+#     num_landmarks=NUM_LANDMARKS,
+# )
 
 optimizer = torch.optim.SGD(
     model.parameters(), lr=LEARNING_RATE, momentum=MOMENTUM, weight_decay=WEIGHT_DECAY
 )
 from train import training_loop
 
-history = training_loop(model, optimizer, train_dataloader, epochs=5, val_dataloader=val_dataloader)
-
-# After the final evaluation, we print more detailed evaluation statistics,
-plt.plot(history["train_loss"])
-plt.plot(history["train_accuracy"])
-plt.plot(history["val_accuracy_pitch"])
-plt.plot(history["val_accuracy_ks"])
-plt.legend(
-    [
-        "training loss",
-        "training accuracy",
-        "validation_accuracy_pitch",
-        "validation_accuracy_ks",
-    ]
+history = training_loop(
+    model, optimizer, train_dataloader, epochs=5, val_dataloader=val_dataloader
 )
 
-
-# %%
-
-
-# %%
-# find the best working model on the accuracy
-max_accuracy = np.max(history["val_accuracy_pitch"])
-best_epoch = np.argmax(history["val_accuracy_pitch"])
-print("Best validation accuracy: ", max_accuracy, "at epoch", best_epoch)
-
-plt.plot(history["train_loss"])
-plt.plot(history["train_accuracy"])
-plt.plot(history["val_accuracy_pitch"])
-plt.plot(history["val_accuracy_ks"])
-plt.legend(
-    [
-        "training loss",
-        "training accuracy",
-        "validation_accuracy_pitch",
-        "validation_accuracy_ks",
-    ]
-)
-
-
-# %%
-# torch.save(model, "./models/model_asap_crf200dur.pkl")
-# files.download("model_asap_crf300.pkl")
-
-# %% [markdown]
-# ### print attention
-# %% [markdown]
-# ## Test on Mdata dataset
-
-# %%
 # model = torch.load("./models/model_RNNks.pkl")
-from inference import evaluate
+# from inference import evaluate
 
-model = torch.load("./models/temp/model_temp_epoch6.pkl")
-musedata_noisy_path = Path(basepath, "./datasets/musedata_noisy.pkl")
-evaluate(model, musedata_noisy_path)
+# model = torch.load("./models/temp/model_temp_epoch6.pkl")
+# musedata_noisy_path = Path(basepath, "./datasets/musedata_noisy.pkl")
+# evaluate(model, musedata_noisy_path)
 
 
 # %%
