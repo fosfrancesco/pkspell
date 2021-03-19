@@ -132,3 +132,20 @@ def evaluate(model, dataset_path, device=None):
         "Total error rate:",
         sum(errors_per_author_pitch.values()) / sum(notes_per_author.values()) * 100,
     )
+
+
+@click.command()
+@click.option("--model", help="Path to a saved PyTorch .pt model")
+@click.option("--dataset", help="Path to one of the datasets")
+@click.option(
+    "--device",
+    default="cpu",
+    help='Device (default="cpu", use "cuda" for faster computation)',
+)
+def run_evaluate(model, dataset, device):
+    model = torch.load(model)
+    evaluate(model, dataset, device=device)
+
+
+if __name__ == "__main__":
+    run_evaluate()
