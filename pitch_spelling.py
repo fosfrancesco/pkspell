@@ -105,7 +105,7 @@ paths = [p for p in paths if root_folder(p) not in one_piece_composers]
 
 # Divide train and validation set
 path_train, path_validation = sklearn.model_selection.train_test_split(
-    paths, test_size=0.15, stratify=[root_folder(p) for p in paths]
+    paths, test_size=0.15, stratify=composer_per_piece, random_state=0
 )
 print("Train and validation lenghts: ", len(path_train), len(path_validation))
 
