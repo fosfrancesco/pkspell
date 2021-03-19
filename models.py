@@ -268,7 +268,10 @@ class Attention(nn.Module):
         V = self.split_heads(self.W_v(X))
         with torch.cuda.amp.autocast(enabled=False):
             attn_out = self.attn(
-                Q.float(), K.float(), V.float(), pad_mask.float().to(self.W_q.device)
+                Q.float(),
+                K.float(),
+                V.float(),
+                pad_mask.float().to(next(self.W_q.parameters()).device),
             )
         out = self.combine_heads(attn_out)
 
