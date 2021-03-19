@@ -10,6 +10,7 @@
 # %%
 # from google.colab import files
 
+import click
 import pickle
 from collections import Counter
 from pathlib import Path
@@ -195,81 +196,96 @@ data_loader = DataLoader(
 
 
 # %%
-n_epochs = 30
-HIDDEN_DIM = 96  # as it is implemented now, this is double the hidden_dim
-LEARNING_RATE = 0.05
-WEIGHT_DECAY = 1e-4
-BATCH_SIZE = 8
-MOMENTUM = 0.9
-RNN_LAYERS = 1
+@click.command()
+@click.option("--epochs", default=30, type=int)
+@click.option("--lr", default=0.05, type=float)
+@click.option("--hidden_dim", default=96, type=int)
+@click.option("--bs", default=8, type=int)
+@click.option("--momentum", default=0.9, type=float)
+@click.option("--hidden_dim2", default=48, type=int)
+@click.option("--layers", default=1, type=int)
+def train_pitch_speller(epochs, lr, hidden_dim, bs, momentum, hidden_dim2, layers):
+    N_EPOCHS = epochs
+    HIDDEN_DIM = hidden_dim  # as it is implemented now, this is double the hidden_dim
+    LEARNING_RATE = lr
+    WEIGHT_DECAY = 1e-4
+    BATCH_SIZE = bs
+    MOMENTUM = momentum
+    RNN_LAYERS = layers
 
-# ks rnn hyperparameter
-HIDDEN_DIM2 = 48
+    # ks rnn hyperparameter
+    HIDDEN_DIM2 = hidden_dim2
 
-# attention hyperparameter
-NUM_HEAD = 2
-NUM_LANDMARKS = 64  # should we make this depending on the seq length for each batch?
+    # attention hyperparameter
+    NUM_HEAD = 2
+    NUM_LANDMARKS = 64  # should we make this depending on the seq length for each batch?
 
+    train_dataset = PSDataset(
+        dict_dataset,
+        path_train,
+        transform_chrom,
+        transform_diat,
+        transform_key,
+        True,
+        sort=True,
+        truncate=None,
+    )
+    validation_dataset = PSDataset(
+        dict_dataset,
+        path_validation,
+        transform_chrom,
+        transform_diat,
+        transform_key,
+        False,
+    )
 
-train_dataset = PSDataset(
-    dict_dataset,
-    path_train,
-    transform_chrom,
-    transform_diat,
-    transform_key,
-    True,
-    sort=True,
-    truncate=None,
-)
-validation_dataset = PSDataset(
-    dict_dataset, path_validation, transform_chrom, transform_diat, transform_key, False
-)
+    train_dataloader = DataLoader(
+        train_dataset, batch_size=BATCH_SIZE, shuffle=True, collate_fn=pad_collate
+    )
+    val_dataloader = DataLoader(
+        validation_dataset, batch_size=1, shuffle=False, collate_fn=pad_collate
+    )
 
-train_dataloader = DataLoader(
-    train_dataset, batch_size=BATCH_SIZE, shuffle=True, collate_fn=pad_collate
-)
-val_dataloader = DataLoader(
-    validation_dataset, batch_size=1, shuffle=False, collate_fn=pad_collate
-)
+    # model = torch.load("./models/temp/model_temp_epoch30-to_restart.pkl")
 
-# model = torch.load("./models/temp/model_temp_epoch30-to_restart.pkl")
+    from models import (
+        RNNMultiTagger,
+        RNNMultNystromAttentionTagger,
+        RNNNystromAttentionTagger,
+        RNNTagger,
+    )
 
-from models import (
-    RNNMultiTagger,
-    RNNMultNystromAttentionTagger,
-    RNNNystromAttentionTagger,
-    RNNTagger,
-)
+    # model = RNNTagger(len(midi_to_ix)+N_DURATION_CLASSES,HIDDEN_DIM,pitch_to_ix,ks_to_ix, n_layers =RNN_LAYERS)
+    model = RNNMultiTagger(
+        len(midi_to_ix) + N_DURATION_CLASSES,
+        HIDDEN_DIM,
+        pitch_to_ix,
+        ks_to_ix,
+        n_layers=RNN_LAYERS,
+    )
+    # model = RNNNystromAttentionTagger(len(midi_to_ix)+N_DURATION_CLASSES,HIDDEN_DIM,pitch_to_ix,ks_to_ix, n_layers =RNN_LAYERS,num_head=NUM_HEAD,num_landmarks=NUM_LANDMARKS)
+    # model = RNNMultNystromAttentionTagger(
+    #     len(midi_to_ix) + N_DURATION_CLASSES,
+    #     HIDDEN_DIM,
+    #     pitch_to_ix,
+    #     ks_to_ix,
+    #     n_layers=RNN_LAYERS,
+    #     hidden_dim2=HIDDEN_DIM2,
+    #     num_head=NUM_HEAD,
+    #     num_landmarks=NUM_LANDMARKS,
+    # )
 
-# model = RNNTagger(len(midi_to_ix)+N_DURATION_CLASSES,HIDDEN_DIM,pitch_to_ix,ks_to_ix, n_layers =RNN_LAYERS)
-model = RNNMultiTagger(
-    len(midi_to_ix) + N_DURATION_CLASSES,
-    HIDDEN_DIM,
-    pitch_to_ix,
-    ks_to_ix,
-    n_layers=RNN_LAYERS,
-)
-# model = RNNNystromAttentionTagger(len(midi_to_ix)+N_DURATION_CLASSES,HIDDEN_DIM,pitch_to_ix,ks_to_ix, n_layers =RNN_LAYERS,num_head=NUM_HEAD,num_landmarks=NUM_LANDMARKS)
-# model = RNNMultNystromAttentionTagger(
-#     len(midi_to_ix) + N_DURATION_CLASSES,
-#     HIDDEN_DIM,
-#     pitch_to_ix,
-#     ks_to_ix,
-#     n_layers=RNN_LAYERS,
-#     hidden_dim2=HIDDEN_DIM2,
-#     num_head=NUM_HEAD,
-#     num_landmarks=NUM_LANDMARKS,
-# )
+    optimizer = torch.optim.SGD(
+        model.parameters(), lr=LEARNING_RATE, momentum=MOMENTUM, weight_decay=WEIGHT_DECAY
+    )
+    from train import training_loop
 
-optimizer = torch.optim.SGD(
-    model.parameters(), lr=LEARNING_RATE, momentum=MOMENTUM, weight_decay=WEIGHT_DECAY
-)
-from train import training_loop
+    history = training_loop(
+        model, optimizer, train_dataloader, epochs=N_EPOCHS, val_dataloader=val_dataloader
+    )
 
-history = training_loop(
-    model, optimizer, train_dataloader, epochs=5, val_dataloader=val_dataloader
-)
-
+if __name__=="__main__":
+    train_pitch_speller()
 # model = torch.load("./models/model_RNNks.pkl")
 # from inference import evaluate
 
