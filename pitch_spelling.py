@@ -104,6 +104,7 @@ one_piece_composers = [
 paths = [p for p in paths if root_folder(p) not in one_piece_composers]
 
 # Divide train and validation set
+composer_per_piece = [root_folder(p) for p in paths]
 path_train, path_validation = sklearn.model_selection.train_test_split(
     paths, test_size=0.15, stratify=composer_per_piece, random_state=0
 )
@@ -278,6 +279,7 @@ def train_pitch_speller(epochs, lr, hidden_dim, bs, momentum, hidden_dim2, layer
     optimizer = torch.optim.SGD(
         model.parameters(), lr=LEARNING_RATE, momentum=MOMENTUM, weight_decay=WEIGHT_DECAY
     )
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='max', factor=0.1, patience=N_EPOCHS/5)
     from train import training_loop
 
     history = training_loop(
