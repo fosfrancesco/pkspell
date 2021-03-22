@@ -2,3 +2,4 @@ __pycache__/
 .vscode/
 .ipynb_checkpoints/
 models/temp/
+runs/
