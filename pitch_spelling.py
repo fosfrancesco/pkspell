@@ -241,10 +241,10 @@ def train_pitch_speller(epochs, lr, hidden_dim, bs, momentum, hidden_dim2, layer
     )
 
     train_dataloader = DataLoader(
-        train_dataset, batch_size=BATCH_SIZE, shuffle=True, collate_fn=pad_collate
+        train_dataset, batch_size=BATCH_SIZE, shuffle=True, collate_fn=pad_collate, num_workers=2
     )
     val_dataloader = DataLoader(
-        validation_dataset, batch_size=1, shuffle=False, collate_fn=pad_collate
+        validation_dataset, batch_size=1, shuffle=False, collate_fn=pad_collate, num_workers=1
     )
 
     # model = torch.load("./models/temp/model_temp_epoch30-to_restart.pkl")
