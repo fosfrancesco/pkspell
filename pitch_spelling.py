@@ -279,7 +279,7 @@ def train_pitch_speller(epochs, lr, hidden_dim, bs, momentum, hidden_dim2, layer
     optimizer = torch.optim.SGD(
         model.parameters(), lr=LEARNING_RATE, momentum=MOMENTUM, weight_decay=WEIGHT_DECAY
     )
-    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='max', factor=0.1, patience=N_EPOCHS/5)
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='max', factor=0.1, patience=N_EPOCHS/5, verbose=True)
     from train import training_loop
     from torch.utils.tensorboard import SummaryWriter
     hyperparams_str = f"lr_{LEARNING_RATE}_nlayers_{RNN_LAYERS}_bs_{BATCH_SIZE}_dim_{HIDDEN_DIM}"
