@@ -281,9 +281,13 @@ def train_pitch_speller(epochs, lr, hidden_dim, bs, momentum, hidden_dim2, layer
     )
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='max', factor=0.1, patience=N_EPOCHS/5)
     from train import training_loop
+    from torch.utils.tensorboard import SummaryWriter
+    hyperparams_str = f"lr_{LEARNING_RATE}_nlayers_{RNN_LAYERS}_bs_{BATCH_SIZE}_dim_{HIDDEN_DIM}"
+    print(hyperparams_str)
+    writer = SummaryWriter(comment=hyperparams_str, flush_secs=20)
 
     history = training_loop(
-        model, optimizer, train_dataloader, epochs=N_EPOCHS, val_dataloader=val_dataloader
+        model, optimizer, train_dataloader, epochs=N_EPOCHS, val_dataloader=val_dataloader,writer=writer
     )
 
 if __name__=="__main__":
