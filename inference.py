@@ -51,6 +51,7 @@ def evaluate(model, dataset_path, device=None):
             torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
         )
     print(f"Using device: {device}")
+    model = model.to(device)
 
     all_inputs = []
     all_predicted_pitch = []

@@ -241,10 +241,10 @@ def train_pitch_speller(epochs, lr, hidden_dim, bs, momentum, hidden_dim2, layer
     )
 
     train_dataloader = DataLoader(
-        train_dataset, batch_size=BATCH_SIZE, shuffle=True, collate_fn=pad_collate
+        train_dataset, batch_size=BATCH_SIZE, shuffle=True, collate_fn=pad_collate, num_workers=2
     )
     val_dataloader = DataLoader(
-        validation_dataset, batch_size=1, shuffle=False, collate_fn=pad_collate
+        validation_dataset, batch_size=1, shuffle=False, collate_fn=pad_collate, num_workers=1
     )
 
     # model = torch.load("./models/temp/model_temp_epoch30-to_restart.pkl")
@@ -279,11 +279,15 @@ def train_pitch_speller(epochs, lr, hidden_dim, bs, momentum, hidden_dim2, layer
     optimizer = torch.optim.SGD(
         model.parameters(), lr=LEARNING_RATE, momentum=MOMENTUM, weight_decay=WEIGHT_DECAY
     )
-    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='max', factor=0.1, patience=N_EPOCHS/5)
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='max', factor=0.1, patience=N_EPOCHS/5, verbose=True)
     from train import training_loop
+    from torch.utils.tensorboard import SummaryWriter
+    hyperparams_str = f"lr_{LEARNING_RATE}_nlayers_{RNN_LAYERS}_bs_{BATCH_SIZE}_dim_{HIDDEN_DIM}"
+    print(hyperparams_str)
+    writer = SummaryWriter(comment=hyperparams_str, flush_secs=20)
 
     history = training_loop(
-        model, optimizer, train_dataloader, epochs=N_EPOCHS, val_dataloader=val_dataloader
+        model, optimizer, train_dataloader, epochs=N_EPOCHS, val_dataloader=val_dataloader,writer=writer
     )
 
 if __name__=="__main__":

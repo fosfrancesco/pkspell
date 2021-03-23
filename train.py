@@ -48,7 +48,7 @@ def training_loop(
             optimizer.step()
             loss_sum += loss.item()
             writer.add_scalar(
-                "Loss/train", loss.item(), i_epoch * len(train_dataloader) + idx
+                "Loss/train", loss.item(), (i_epoch-1) * len(train_dataloader) + idx
             )
 
             with torch.no_grad():
