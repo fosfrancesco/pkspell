@@ -205,7 +205,9 @@ data_loader = DataLoader(
 @click.option("--momentum", default=0.9, type=float)
 @click.option("--hidden_dim2", default=48, type=int)
 @click.option("--layers", default=1, type=int)
-def train_pitch_speller(epochs, lr, hidden_dim, bs, momentum, hidden_dim2, layers):
+@click.option("--device", type=str)
+@click.option("--dropout", type=float)
+def train_pitch_speller(epochs, lr, hidden_dim, bs, momentum, hidden_dim2, layers, device, dropout):
     N_EPOCHS = epochs
     HIDDEN_DIM = hidden_dim  # as it is implemented now, this is double the hidden_dim
     LEARNING_RATE = lr
@@ -213,6 +215,8 @@ def train_pitch_speller(epochs, lr, hidden_dim, bs, momentum, hidden_dim2, layer
     BATCH_SIZE = bs
     MOMENTUM = momentum
     RNN_LAYERS = layers
+    DEVICE = device
+    DROPOUT = dropout
 
     # ks rnn hyperparameter
     HIDDEN_DIM2 = hidden_dim2
@@ -263,6 +267,7 @@ def train_pitch_speller(epochs, lr, hidden_dim, bs, momentum, hidden_dim2, layer
         pitch_to_ix,
         ks_to_ix,
         n_layers=RNN_LAYERS,
+        dropout=DROPOUT
     )
     # model = RNNNystromAttentionTagger(len(midi_to_ix)+N_DURATION_CLASSES,HIDDEN_DIM,pitch_to_ix,ks_to_ix, n_layers =RNN_LAYERS,num_head=NUM_HEAD,num_landmarks=NUM_LANDMARKS)
     # model = RNNMultNystromAttentionTagger(
@@ -282,7 +287,7 @@ def train_pitch_speller(epochs, lr, hidden_dim, bs, momentum, hidden_dim2, layer
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='max', factor=0.1, patience=N_EPOCHS/5, verbose=True)
     from train import training_loop
     from torch.utils.tensorboard import SummaryWriter
-    hyperparams_str = f"lr_{LEARNING_RATE}_nlayers_{RNN_LAYERS}_bs_{BATCH_SIZE}_dim_{HIDDEN_DIM}"
+    hyperparams_str = f"lr_{LEARNING_RATE}_nlayers_{RNN_LAYERS}_bs_{BATCH_SIZE}_dim_{HIDDEN_DIM}_dropout_{DROPOUT}"
     print(hyperparams_str)
     writer = SummaryWriter(comment=hyperparams_str, flush_secs=20)
 

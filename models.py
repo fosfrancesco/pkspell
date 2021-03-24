@@ -81,7 +81,7 @@ class RNNMultiTagger(nn.Module):
     """
 
     def __init__(
-        self, input_dim, hidden_dim, pitch_to_ix, ks_to_ix, hidden_dim2=24, n_layers=1
+        self, input_dim, hidden_dim, pitch_to_ix, ks_to_ix, hidden_dim2=24, n_layers=1,dropout=None
     ):
         super(RNNMultiTagger, self).__init__()
 
@@ -104,6 +104,11 @@ class RNNMultiTagger(nn.Module):
             num_layers=n_layers,
         )
 
+        if dropout is not None:
+            self.dropout = nn.Dropout(p=dropout)
+        else:
+            self.dropout = dropout
+
         # Output layer. The input will be two times
         # the RNN size since we are using a bidirectional RNN.
         self.top_layer_pitch = nn.Linear(hidden_dim, self.n_out_pitch)
@@ -120,6 +125,8 @@ class RNNMultiTagger(nn.Module):
         rnn_out, _ = self.rnn(sentences)
         rnn_out, _ = nn.utils.rnn.pad_packed_sequence(rnn_out)
 
+        if self.dropout is not None:
+            rnn_out = self.dropout(rnn_out)
         out_pitch = self.top_layer_pitch(rnn_out)
 
         # pass the ks information into the second rnn
@@ -127,6 +134,8 @@ class RNNMultiTagger(nn.Module):
         rnn_out, _ = self.rnn2(rnn_out)
         rnn_out, _ = nn.utils.rnn.pad_packed_sequence(rnn_out)
 
+        if self.dropout is not None:
+            rnn_out = self.dropout(rnn_out)
         out_ks = self.top_layer_ks(rnn_out)
 
         return out_pitch, out_ks
