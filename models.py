@@ -81,7 +81,7 @@ class RNNMultiTagger(nn.Module):
     """
 
     def __init__(
-        self, input_dim, hidden_dim, pitch_to_ix, ks_to_ix, hidden_dim2=24, n_layers=1,dropout=None
+        self, input_dim, hidden_dim, pitch_to_ix, ks_to_ix, hidden_dim2=24, n_layers=1,dropout=None,cell_type="GRU"
     ):
         super(RNNMultiTagger, self).__init__()
 
@@ -90,14 +90,21 @@ class RNNMultiTagger(nn.Module):
         self.hidden_dim = hidden_dim
         self.hidden_dim2 = hidden_dim2
 
+        if cell_type == "GRU":
+            rnn_cell = nn.GRU
+        elif cell_type == "LSTM":
+            rnn_cell = nn.LSTM
+        else:
+            raise ValueError(f"Unknown RNN cell type: {cell_type}")
+
         # RNN layer. We're using a bidirectional GRU
-        self.rnn = nn.GRU(
+        self.rnn = rnn_cell(
             input_size=input_dim,
             hidden_size=hidden_dim // 2,
             bidirectional=True,
             num_layers=n_layers,
         )
-        self.rnn2 = nn.GRU(
+        self.rnn2 = rnn_cell(
             input_size=hidden_dim,
             hidden_size=hidden_dim2 // 2,
             bidirectional=True,
