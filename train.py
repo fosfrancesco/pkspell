@@ -97,7 +97,9 @@ def training_loop(
             writer.add_scalar("Accuracy_Pitch/val", val_accuracy_pitch, i_epoch)
             writer.add_scalar("Accuracy_KS/val", val_accuracy_ks, i_epoch)
             if scheduler is not None:
-                scheduler.step(val_accuracy_pitch)
+                scheduler.step()
+            #if scheduler is not None:
+            #    scheduler.step(val_accuracy_pitch)
 
         #         save the model
         torch.save(model, "./models/temp/model_temp_epoch{}.pkl".format(i_epoch))

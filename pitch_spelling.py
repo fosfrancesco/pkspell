@@ -91,23 +91,27 @@ print(len(paths), "pieces after removing overlapping with musedata and Mozart Fa
 
 # %%
 # Temporary remove composer with only one piece, because they create problems with sklearn stratify
-one_piece_composers = [
-    "Balakirev",
-    "Prokofiev",
-    "Brahms",
-    "Glinka",
-    "Debussy",
-    "Ravel",
-    "Scriabin",
-    "Liszt",
-]
-paths = [p for p in paths if root_folder(p) not in one_piece_composers]
+#one_piece_composers = [
+#    "Balakirev",
+#    "Prokofiev",
+#    "Brahms",
+#    "Glinka",
+#    "Debussy",
+#    "Ravel",
+#    "Scriabin",
+#    "Liszt",
+#]
+#paths = [p for p in paths if root_folder(p) not in one_piece_composers]
+paths = sorted(paths)
 
 # Divide train and validation set
 composer_per_piece = [root_folder(p) for p in paths]
+import numpy as np
 path_train, path_validation = sklearn.model_selection.train_test_split(
-    paths, test_size=0.15, stratify=composer_per_piece, random_state=0
+    #paths, test_size=0.15, stratify=composer_per_piece, random_state=42
+    paths, test_size=0.15, random_state=42
 )
+print(path_validation)
 print("Train and validation lenghts: ", len(path_train), len(path_validation))
 
 # need to find a better way to visualize this
@@ -296,7 +300,9 @@ def train_pitch_speller(model, epochs, lr, hidden_dim, bs, momentum, hidden_dim2
     optimizer = torch.optim.SGD(
         model.parameters(), lr=LEARNING_RATE, momentum=MOMENTUM, weight_decay=WEIGHT_DECAY
     )
-    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='max', factor=0.1, patience=N_EPOCHS/5, verbose=True)
+    #scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='max', factor=0.1, patience=N_EPOCHS/10, verbose=True)
+    #scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, [N_EPOCHS//2, 3*N_EPOCHS//4], gamma=0.1, verbose=True)
+    scheduler = None
     from train import training_loop
     from torch.utils.tensorboard import SummaryWriter
     hyperparams_str = f"_{RNN_CELL}_lr_{LEARNING_RATE}_nlayers_{RNN_LAYERS}_bs_{BATCH_SIZE}_dim_{HIDDEN_DIM}_dropout_{DROPOUT}"
