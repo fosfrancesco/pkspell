@@ -198,6 +198,7 @@ data_loader = DataLoader(
 
 # %%
 @click.command()
+@click.option("--model", default="RNNMulti", type=str)
 @click.option("--epochs", default=30, type=int)
 @click.option("--lr", default=0.05, type=float)
 @click.option("--hidden_dim", default=96, type=int)
@@ -206,9 +207,9 @@ data_loader = DataLoader(
 @click.option("--hidden_dim2", default=48, type=int)
 @click.option("--layers", default=1, type=int)
 @click.option("--device", type=str)
-@click.option("--dropout", type=float)
+@click.option("--dropout", default=0, type=float)
 @click.option("--cell", default="GRU", type=str)
-def train_pitch_speller(epochs, lr, hidden_dim, bs, momentum, hidden_dim2, layers, device, dropout, cell):
+def train_pitch_speller(model, epochs, lr, hidden_dim, bs, momentum, hidden_dim2, layers, device, dropout, cell):
     N_EPOCHS = epochs
     HIDDEN_DIM = hidden_dim  # as it is implemented now, this is double the hidden_dim
     LEARNING_RATE = lr
@@ -262,16 +263,24 @@ def train_pitch_speller(epochs, lr, hidden_dim, bs, momentum, hidden_dim2, layer
         RNNTagger,
     )
 
-    # model = RNNTagger(len(midi_to_ix)+N_DURATION_CLASSES,HIDDEN_DIM,pitch_to_ix,ks_to_ix, n_layers =RNN_LAYERS)
-    model = RNNMultiTagger(
-        len(midi_to_ix) + N_DURATION_CLASSES,
-        HIDDEN_DIM,
-        pitch_to_ix,
-        ks_to_ix,
-        n_layers=RNN_LAYERS,
-        dropout=DROPOUT,
-        cell_type=RNN_CELL
-    )
+    if model == "RNN":
+        model = RNNTagger(len(midi_to_ix)+N_DURATION_CLASSES,
+                    HIDDEN_DIM,
+                    pitch_to_ix,
+                    ks_to_ix,
+                    n_layers =RNN_LAYERS,
+                    dropout=DROPOUT,
+                    cell_type=RNN_CELL)
+    elif model == "RNNMulti":
+        model = RNNMultiTagger(
+            len(midi_to_ix) + N_DURATION_CLASSES,
+            HIDDEN_DIM,
+            pitch_to_ix,
+            ks_to_ix,
+            n_layers=RNN_LAYERS,
+            dropout=DROPOUT,
+            cell_type=RNN_CELL
+        )
     # model = RNNNystromAttentionTagger(len(midi_to_ix)+N_DURATION_CLASSES,HIDDEN_DIM,pitch_to_ix,ks_to_ix, n_layers =RNN_LAYERS,num_head=NUM_HEAD,num_landmarks=NUM_LANDMARKS)
     # model = RNNMultNystromAttentionTagger(
     #     len(midi_to_ix) + N_DURATION_CLASSES,

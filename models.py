@@ -10,20 +10,33 @@ from utils import closest_multiple
 class RNNTagger(nn.Module):
     """Vanilla RNN Model, slide 12 of powerpoint presentation"""
 
-    def __init__(self, input_dim, hidden_dim, pitch_to_ix, ks_to_ix, n_layers=1):
+    def __init__(self, input_dim, hidden_dim, pitch_to_ix, ks_to_ix, n_layers=1, cell_type="GRU", dropout=None):
         super(RNNTagger, self).__init__()
 
         self.n_out_pitch = len(pitch_to_ix)
         self.n_out_ks = len(ks_to_ix)
         self.hidden_dim = hidden_dim
 
+        if cell_type == "GRU":
+            rnn_cell = nn.GRU
+        elif cell_type == "LSTM":
+            rnn_cell = nn.LSTM
+        else:
+            raise ValueError(f"Unknown RNN cell type: {cell_type}")
+
         # RNN layer. We're using a bidirectional GRU
-        self.rnn = nn.GRU(
+        self.rnn = rnn_cell(
             input_size=input_dim,
             hidden_size=hidden_dim // 2,
             bidirectional=True,
             num_layers=n_layers,
+            dropout=dropout if dropout is not None else 0
         )
+
+        if dropout is not None and dropout > 0:
+            self.dropout = nn.Dropout(p=dropout)
+        else:
+            self.dropout = None
 
         # Output layer. The input will be two times
         # the RNN size since we are using a bidirectional RNN.
@@ -40,6 +53,9 @@ class RNNTagger(nn.Module):
         sentences = nn.utils.rnn.pack_padded_sequence(sentences, sentences_len)
         rnn_out, _ = self.rnn(sentences)
         rnn_out, _ = nn.utils.rnn.pad_packed_sequence(rnn_out)
+
+        if self.dropout is not None:
+            rnn_out = self.dropout(rnn_out)
 
         out_pitch = self.top_layer_pitch(rnn_out)
         out_ks = self.top_layer_ks(rnn_out)
@@ -102,19 +118,21 @@ class RNNMultiTagger(nn.Module):
             input_size=input_dim,
             hidden_size=hidden_dim // 2,
             bidirectional=True,
+            dropout=dropout,
             num_layers=n_layers,
         )
         self.rnn2 = rnn_cell(
             input_size=hidden_dim,
             hidden_size=hidden_dim2 // 2,
             bidirectional=True,
+            dropout=dropout,
             num_layers=n_layers,
         )
 
-        if dropout is not None:
+        if dropout is not None and dropout > 0:
             self.dropout = nn.Dropout(p=dropout)
         else:
-            self.dropout = dropout
+            self.dropout = None
 
         # Output layer. The input will be two times
         # the RNN size since we are using a bidirectional RNN.
