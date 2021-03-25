@@ -220,6 +220,7 @@ data_loader = DataLoader(
 @click.option("--cell", default="GRU", type=str)
 @click.option("--optimizer", default="SGD", type=str)
 def train_pitch_speller(model, epochs, lr, hidden_dim, bs, momentum, hidden_dim2, layers, device, dropout, cell, decay, optimizer):
+    MODEL = model
     N_EPOCHS = epochs
     HIDDEN_DIM = hidden_dim  # as it is implemented now, this is double the hidden_dim
     LEARNING_RATE = lr
@@ -323,7 +324,7 @@ def train_pitch_speller(model, epochs, lr, hidden_dim, bs, momentum, hidden_dim2
     
     from train import training_loop
     from torch.utils.tensorboard import SummaryWriter
-    hyperparams_str = f"_{RNN_CELL}{model}_{OPTIMIZER}_lr_{LEARNING_RATE}_nlayers_{RNN_LAYERS}_bs_{BATCH_SIZE}_dim_{HIDDEN_DIM}_dropout_{DROPOUT}"
+    hyperparams_str = f"_{RNN_CELL}{MODEL}_{OPTIMIZER}_lr_{LEARNING_RATE}_nlayers_{RNN_LAYERS}_bs_{BATCH_SIZE}_dim_{HIDDEN_DIM}_dropout_{DROPOUT}"
     print(hyperparams_str)
     writer = SummaryWriter(comment=hyperparams_str, flush_secs=20)
 
