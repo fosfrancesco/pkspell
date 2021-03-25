@@ -37,6 +37,10 @@ from torch.utils.data import DataLoader
 # %%
 # !git clone https://github.com/fosfrancesco/pitch-spelling.git
 
+# Reproducibility
+torch.manual_seed(42)
+np.random.seed(42)
+
 basepath = "./"  # to change if running locally or on colab
 # load the asap datasets with ks
 with open(Path("./asapks.pkl"), "rb") as fid:
