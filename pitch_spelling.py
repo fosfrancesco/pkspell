@@ -209,25 +209,28 @@ data_loader = DataLoader(
 @click.option("--model", default="RNNMulti", type=str)
 @click.option("--epochs", default=30, type=int)
 @click.option("--lr", default=0.05, type=float)
-@click.option("--hidden_dim", default=96, type=int)
-@click.option("--bs", default=8, type=int)
 @click.option("--momentum", default=0.9, type=float)
-@click.option("--hidden_dim2", default=48, type=int)
+@click.option("--decay", default=0., type=float)
+@click.option("--hidden_dim", default=100, type=int)
+@click.option("--hidden_dim2", default=50, type=int)
+@click.option("--bs", default=8, type=int)
 @click.option("--layers", default=1, type=int)
 @click.option("--device", type=str)
 @click.option("--dropout", default=0, type=float)
 @click.option("--cell", default="GRU", type=str)
-def train_pitch_speller(model, epochs, lr, hidden_dim, bs, momentum, hidden_dim2, layers, device, dropout, cell):
+@click.option("--optimizer", default="SGD", type=str)
+def train_pitch_speller(model, epochs, lr, hidden_dim, bs, momentum, hidden_dim2, layers, device, dropout, cell, decay, optimizer):
     N_EPOCHS = epochs
     HIDDEN_DIM = hidden_dim  # as it is implemented now, this is double the hidden_dim
     LEARNING_RATE = lr
-    WEIGHT_DECAY = 1e-4
+    WEIGHT_DECAY = 0.
     BATCH_SIZE = bs
     MOMENTUM = momentum
     RNN_LAYERS = layers
     DEVICE = device
     DROPOUT = dropout
     RNN_CELL = cell
+    OPTIMIZER = optimizer
 
     # ks rnn hyperparameter
     HIDDEN_DIM2 = hidden_dim2
@@ -301,15 +304,26 @@ def train_pitch_speller(model, epochs, lr, hidden_dim, bs, momentum, hidden_dim2
     #     num_landmarks=NUM_LANDMARKS,
     # )
 
-    optimizer = torch.optim.SGD(
-        model.parameters(), lr=LEARNING_RATE, momentum=MOMENTUM, weight_decay=WEIGHT_DECAY
-    )
-    #scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='max', factor=0.1, patience=N_EPOCHS/10, verbose=True)
-    #scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, [N_EPOCHS//2, 3*N_EPOCHS//4], gamma=0.1, verbose=True)
-    scheduler = None
+    if OPTIMIZER == "SGD":
+        optimizer = torch.optim.SGD(
+            model.parameters(), lr=LEARNING_RATE, momentum=MOMENTUM, weight_decay=WEIGHT_DECAY
+        )
+        scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, [N_EPOCHS//2, 3*N_EPOCHS//4], gamma=0.1, verbose=True)
+        #scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='max', factor=0.1, patience=N_EPOCHS/10, verbose=True)
+    elif OPTIMIZER == "Adam":
+        optimizer = torch.optim.Adam(
+            model.parameters(), lr=LEARNING_RATE
+        )
+        scheduler = None
+    elif OPTIMIZER == "AdamW":
+        optimizer = torch.optim.Adam(
+            model.parameters(), lr=LEARNING_RATE
+        )
+        scheduler = None
+    
     from train import training_loop
     from torch.utils.tensorboard import SummaryWriter
-    hyperparams_str = f"_{RNN_CELL}_lr_{LEARNING_RATE}_nlayers_{RNN_LAYERS}_bs_{BATCH_SIZE}_dim_{HIDDEN_DIM}_dropout_{DROPOUT}"
+    hyperparams_str = f"_{RNN_CELL}{model}_{OPTIMIZER}_lr_{LEARNING_RATE}_nlayers_{RNN_LAYERS}_bs_{BATCH_SIZE}_dim_{HIDDEN_DIM}_dropout_{DROPOUT}"
     print(hyperparams_str)
     writer = SummaryWriter(comment=hyperparams_str, flush_secs=20)
 
