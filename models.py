@@ -10,7 +10,18 @@ from utils import closest_multiple
 class RNNTagger(nn.Module):
     """Vanilla RNN Model, slide 12 of powerpoint presentation"""
 
-    def __init__(self, input_dim, hidden_dim, pitch_to_ix, ks_to_ix, n_layers=1, cell_type="GRU", dropout=None, bidirectional=True, mode="both"):
+    def __init__(
+        self,
+        input_dim,
+        hidden_dim,
+        pitch_to_ix,
+        ks_to_ix,
+        n_layers=1,
+        cell_type="GRU",
+        dropout=None,
+        bidirectional=True,
+        mode="both",
+    ):
         super(RNNTagger, self).__init__()
 
         self.n_out_pitch = len(pitch_to_ix)
@@ -30,7 +41,7 @@ class RNNTagger(nn.Module):
             hidden_size=hidden_dim // 2 if bidirectional else hidden_dim,
             bidirectional=bidirectional,
             num_layers=n_layers,
-            #dropout=dropout if dropout is not None else 0
+            # dropout=dropout if dropout is not None else 0
         )
 
         if dropout is not None and dropout > 0:
@@ -95,7 +106,9 @@ class RNNTagger(nn.Module):
         return [
             predicted_pitch[: int(l), i].cpu().numpy()
             for i, l in enumerate(sentences_len)
-        ], [predicted_ks[: int(l), i].cpu().numpy() for i, l in enumerate(sentences_len)]
+        ], [
+            predicted_ks[: int(l), i].cpu().numpy() for i, l in enumerate(sentences_len)
+        ]
 
 
 class RNNMultiTagger(nn.Module):
@@ -104,7 +117,17 @@ class RNNMultiTagger(nn.Module):
     """
 
     def __init__(
-        self, input_dim, hidden_dim, pitch_to_ix, ks_to_ix, hidden_dim2=24, n_layers=1,dropout=None,cell_type="GRU", bidirectional=True, mode="both"
+        self,
+        input_dim,
+        hidden_dim,
+        pitch_to_ix,
+        ks_to_ix,
+        hidden_dim2=24,
+        n_layers=1,
+        dropout=None,
+        cell_type="GRU",
+        bidirectional=True,
+        mode="both",
     ):
         super(RNNMultiTagger, self).__init__()
 
@@ -125,14 +148,14 @@ class RNNMultiTagger(nn.Module):
             input_size=input_dim,
             hidden_size=hidden_dim // 2 if bidirectional else hidden_dim,
             bidirectional=bidirectional,
-            #dropout=dropout,
+            # dropout=dropout,
             num_layers=n_layers,
         )
         self.rnn2 = rnn_cell(
             input_size=hidden_dim,
             hidden_size=hidden_dim2 // 2 if bidirectional else hidden_dim2,
             bidirectional=bidirectional,
-            #dropout=dropout,
+            # dropout=dropout,
             num_layers=n_layers,
         )
 
@@ -205,7 +228,9 @@ class RNNMultiTagger(nn.Module):
         return [
             predicted_pitch[: int(l), i].cpu().numpy()
             for i, l in enumerate(sentences_len)
-        ], [predicted_ks[: int(l), i].cpu().numpy() for i, l in enumerate(sentences_len)]
+        ], [
+            predicted_ks[: int(l), i].cpu().numpy() for i, l in enumerate(sentences_len)
+        ]
 
 
 class NystromAttention(nn.Module):
@@ -225,7 +250,8 @@ class NystromAttention(nn.Module):
 
         if self.num_landmarks == seq_len:
             attn = nn.functional.softmax(
-                torch.matmul(Q, K.transpose(-1, -2)) - 1e9 * (1 - mask[:, None, None, :]),
+                torch.matmul(Q, K.transpose(-1, -2))
+                - 1e9 * (1 - mask[:, None, None, :]),
                 dim=-1,
             )
             X = torch.matmul(attn, V)
@@ -275,7 +301,8 @@ class NystromAttention(nn.Module):
         for _ in range(n_iter):
             KV = torch.matmul(K, V)
             V = torch.matmul(
-                0.25 * V, 13 * I - torch.matmul(KV, 15 * I - torch.matmul(KV, 7 * I - KV))
+                0.25 * V,
+                13 * I - torch.matmul(KV, 15 * I - torch.matmul(KV, 7 * I - KV)),
             )
         return V
 
@@ -316,9 +343,9 @@ class Attention(nn.Module):
         V = self.split_heads(self.W_v(X))
         with torch.cuda.amp.autocast(enabled=False):
             attn_out = self.attn(
-                Q, #Q.float(),
-                K, #K.float(),
-                V, #V.float(),
+                Q,  # Q.float(),
+                K,  # K.float(),
+                V,  # V.float(),
                 pad_mask.float().to(next(self.W_q.parameters()).device),
             )
         out = self.combine_heads(attn_out)
@@ -431,7 +458,9 @@ class RNNNystromAttentionTagger(nn.Module):
         return [
             predicted_pitch[: int(l), i].cpu().numpy()
             for i, l in enumerate(sentences_len)
-        ], [predicted_ks[: int(l), i].cpu().numpy() for i, l in enumerate(sentences_len)]
+        ], [
+            predicted_ks[: int(l), i].cpu().numpy() for i, l in enumerate(sentences_len)
+        ]
 
 
 class RNNMultNystromAttentionTagger(nn.Module):
@@ -542,4 +571,6 @@ class RNNMultNystromAttentionTagger(nn.Module):
         return [
             predicted_pitch[: int(l), i].cpu().numpy()
             for i, l in enumerate(sentences_len)
-        ], [predicted_ks[: int(l), i].cpu().numpy() for i, l in enumerate(sentences_len)]
+        ], [
+            predicted_ks[: int(l), i].cpu().numpy() for i, l in enumerate(sentences_len)
+        ]
