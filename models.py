@@ -10,7 +10,7 @@ from utils import closest_multiple
 class RNNTagger(nn.Module):
     """Vanilla RNN Model, slide 12 of powerpoint presentation"""
 
-    def __init__(self, input_dim, hidden_dim, pitch_to_ix, ks_to_ix, n_layers=1, cell_type="GRU", dropout=None):
+    def __init__(self, input_dim, hidden_dim, pitch_to_ix, ks_to_ix, n_layers=1, cell_type="GRU", dropout=None, bidirectional=True, mode="both"):
         super(RNNTagger, self).__init__()
 
         self.n_out_pitch = len(pitch_to_ix)
@@ -27,10 +27,10 @@ class RNNTagger(nn.Module):
         # RNN layer. We're using a bidirectional GRU
         self.rnn = rnn_cell(
             input_size=input_dim,
-            hidden_size=hidden_dim // 2,
-            bidirectional=True,
+            hidden_size=hidden_dim // 2 if bidirectional else hidden_dim,
+            bidirectional=bidirectional,
             num_layers=n_layers,
-            dropout=dropout if dropout is not None else 0
+            #dropout=dropout if dropout is not None else 0
         )
 
         if dropout is not None and dropout > 0:
@@ -48,6 +48,7 @@ class RNNTagger(nn.Module):
             reduction="mean", ignore_index=pitch_to_ix[PAD]
         )
         self.loss_ks = nn.CrossEntropyLoss(reduction="mean", ignore_index=ks_to_ix[PAD])
+        self.mode = mode
 
     def compute_outputs(self, sentences, sentences_len):
         sentences = nn.utils.rnn.pack_padded_sequence(sentences, sentences_len)
@@ -74,9 +75,15 @@ class RNNTagger(nn.Module):
         scores_ks = scores_ks.view(-1, self.n_out_ks)
         pitches = pitches.view(-1)
         keysignatures = keysignatures.view(-1)
-        return self.loss_pitch(scores_pitch, pitches) + self.loss_ks(
-            scores_ks, keysignatures
-        )
+        if self.mode == "both":
+            loss = self.loss_pitch(scores_pitch, pitches) + self.loss_ks(
+                scores_ks, keysignatures
+            )
+        elif self.mode == "ks":
+            loss = self.loss_ks(scores_ks, keysignatures)
+        elif self.mode == "ps":
+            loss = self.loss_pitch(scores_pitch, pitches)
+        return loss
 
     def predict(self, sentences, sentences_len):
         # Compute the outputs from the linear units.
@@ -97,7 +104,7 @@ class RNNMultiTagger(nn.Module):
     """
 
     def __init__(
-        self, input_dim, hidden_dim, pitch_to_ix, ks_to_ix, hidden_dim2=24, n_layers=1,dropout=None,cell_type="GRU"
+        self, input_dim, hidden_dim, pitch_to_ix, ks_to_ix, hidden_dim2=24, n_layers=1,dropout=None,cell_type="GRU", bidirectional=True, mode="both"
     ):
         super(RNNMultiTagger, self).__init__()
 
@@ -116,16 +123,16 @@ class RNNMultiTagger(nn.Module):
         # RNN layer. We're using a bidirectional GRU
         self.rnn = rnn_cell(
             input_size=input_dim,
-            hidden_size=hidden_dim // 2,
-            bidirectional=True,
-            dropout=dropout,
+            hidden_size=hidden_dim // 2 if bidirectional else hidden_dim,
+            bidirectional=bidirectional,
+            #dropout=dropout,
             num_layers=n_layers,
         )
         self.rnn2 = rnn_cell(
             input_size=hidden_dim,
-            hidden_size=hidden_dim2 // 2,
-            bidirectional=True,
-            dropout=dropout,
+            hidden_size=hidden_dim2 // 2 if bidirectional else hidden_dim2,
+            bidirectional=bidirectional,
+            #dropout=dropout,
             num_layers=n_layers,
         )
 
@@ -144,6 +151,7 @@ class RNNMultiTagger(nn.Module):
             reduction="mean", ignore_index=pitch_to_ix[PAD]
         )
         self.loss_ks = nn.CrossEntropyLoss(reduction="mean", ignore_index=ks_to_ix[PAD])
+        self.mode = mode
 
     def compute_outputs(self, sentences, sentences_len):
         sentences = nn.utils.rnn.pack_padded_sequence(sentences, sentences_len)
@@ -177,9 +185,15 @@ class RNNMultiTagger(nn.Module):
         scores_ks = scores_ks.view(-1, self.n_out_ks)
         pitches = pitches.view(-1)
         keysignatures = keysignatures.view(-1)
-        return self.loss_pitch(scores_pitch, pitches) + self.loss_ks(
-            scores_ks, keysignatures
-        )
+        if self.mode == "both":
+            loss = self.loss_pitch(scores_pitch, pitches) + self.loss_ks(
+                scores_ks, keysignatures
+            )
+        elif self.mode == "ks":
+            loss = self.loss_ks(scores_ks, keysignatures)
+        elif self.mode == "ps":
+            loss = self.loss_pitch(scores_pitch, pitches)
+        return loss
 
     def predict(self, sentences, sentences_len):
         # Compute the outputs from the linear units.
@@ -302,9 +316,9 @@ class Attention(nn.Module):
         V = self.split_heads(self.W_v(X))
         with torch.cuda.amp.autocast(enabled=False):
             attn_out = self.attn(
-                Q.float(),
-                K.float(),
-                V.float(),
+                Q, #Q.float(),
+                K, #K.float(),
+                V, #V.float(),
                 pad_mask.float().to(next(self.W_q.parameters()).device),
             )
         out = self.combine_heads(attn_out)
@@ -339,6 +353,8 @@ class RNNNystromAttentionTagger(nn.Module):
         n_layers=1,
         num_head=1,
         num_landmarks=64,
+        bidirectional=True,
+        mode="both",
     ):
         super(RNNNystromAttentionTagger, self).__init__()
 
@@ -350,8 +366,8 @@ class RNNNystromAttentionTagger(nn.Module):
         # RNN layer. We're using a bidirectional GRU
         self.rnn = nn.GRU(
             input_size=input_dim,
-            hidden_size=hidden_dim // 2,
-            bidirectional=True,
+            hidden_size=hidden_dim // 2 if bidirectional else hidden_dim,
+            bidirectional=bidirectional,
             num_layers=n_layers,
         )
 
@@ -365,6 +381,7 @@ class RNNNystromAttentionTagger(nn.Module):
             reduction="mean", ignore_index=pitch_to_ix[PAD]
         )
         self.loss_ks = nn.CrossEntropyLoss(reduction="mean", ignore_index=ks_to_ix[PAD])
+        self.mode = mode
 
         # attention function
         self.attention = Attention(self.hidden_dim, num_head, num_landmarks)
@@ -394,9 +411,15 @@ class RNNNystromAttentionTagger(nn.Module):
         scores_ks = scores_ks.view(-1, self.n_out_ks)
         pitches = pitches.view(-1)
         keysignatures = keysignatures.view(-1)
-        return self.loss_pitch(scores_pitch, pitches) + self.loss_ks(
-            scores_ks, keysignatures
-        )
+        if self.mode == "both":
+            loss = self.loss_pitch(scores_pitch, pitches) + self.loss_ks(
+                scores_ks, keysignatures
+            )
+        elif self.mode == "ks":
+            loss = self.loss_ks(scores_ks, keysignatures)
+        elif self.mode == "ps":
+            loss = self.loss_pitch(scores_pitch, pitches)
+        return loss
 
     def predict(self, sentences, sentences_len):
         # Compute the outputs from the linear units.
@@ -424,6 +447,8 @@ class RNNMultNystromAttentionTagger(nn.Module):
         hidden_dim2=24,
         num_head=1,
         num_landmarks=64,
+        bidirectional=True,
+        mode="both",
     ):
         super(RNNMultNystromAttentionTagger, self).__init__()
 
@@ -436,14 +461,14 @@ class RNNMultNystromAttentionTagger(nn.Module):
         # RNN layer. Bidirectional GRU
         self.rnn = nn.GRU(
             input_size=input_dim,
-            hidden_size=hidden_dim // 2,
-            bidirectional=True,
+            hidden_size=hidden_dim // 2 if bidirectional else hidden_dim,
+            bidirectional=bidirectional,
             num_layers=n_layers,
         )
         self.rnn2 = nn.GRU(
             input_size=hidden_dim * num_head,
-            hidden_size=hidden_dim2 // 2,
-            bidirectional=True,
+            hidden_size=hidden_dim2 // 2 if bidirectional else hidden_dim2,
+            bidirectional=bidirectional,
             num_layers=n_layers,
         )
 
@@ -457,6 +482,7 @@ class RNNMultNystromAttentionTagger(nn.Module):
             reduction="mean", ignore_index=pitch_to_ix[PAD]
         )
         self.loss_ks = nn.CrossEntropyLoss(reduction="mean", ignore_index=ks_to_ix[PAD])
+        self.mode = mode
 
         # attention function
         self.attention_pitch = Attention(self.hidden_dim, num_head, num_landmarks)
@@ -496,9 +522,15 @@ class RNNMultNystromAttentionTagger(nn.Module):
         scores_ks = scores_ks.view(-1, self.n_out_ks)
         pitches = pitches.view(-1)
         keysignatures = keysignatures.view(-1)
-        return self.loss_pitch(scores_pitch, pitches) + self.loss_ks(
-            scores_ks, keysignatures
-        )
+        if self.mode == "both":
+            loss = self.loss_pitch(scores_pitch, pitches) + self.loss_ks(
+                scores_ks, keysignatures
+            )
+        elif self.mode == "ks":
+            loss = self.loss_ks(scores_ks, keysignatures)
+        elif self.mode == "ps":
+            loss = self.loss_pitch(scores_pitch, pitches)
+        return loss
 
     def predict(self, sentences, sentences_len):
         # Compute the outputs from the linear units.

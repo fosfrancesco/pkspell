@@ -99,8 +99,8 @@ def training_loop(
 
             writer.add_scalar("Accuracy_Pitch/val", val_accuracy_pitch, i_epoch)
             writer.add_scalar("Accuracy_KS/val", val_accuracy_ks, i_epoch)
-            if scheduler is not None:
-                scheduler.step()
+        if scheduler is not None:
+            scheduler.step()
             #if scheduler is not None:
             #    scheduler.step(val_accuracy_pitch)
 
@@ -109,7 +109,7 @@ def training_loop(
         #         files.download("model_temp_epoch{}.pkl".format(i_epoch))
 
         t1 = time.time()
-        print(
-            f"Epoch {i_epoch}: train loss = {train_loss:.4f}, train_accuracy_pitch: {train_accuracy_pitch:.4f}, train_accuracy_ks: {train_accuracy_ks:.4f},val_accuracy_pitch: {val_accuracy_pitch:.4f},val_accuracy_ks: {val_accuracy_ks:.4f}, time = {t1-t0:.4f}"
-        )
+        #print(
+        #    f"Epoch {i_epoch}: train loss = {train_loss:.4f}, train_accuracy_pitch: {train_accuracy_pitch:.4f}, train_accuracy_ks: {train_accuracy_ks:.4f},val_accuracy_pitch: {val_accuracy_pitch:.4f},val_accuracy_ks: {val_accuracy_ks:.4f}, time = {t1-t0:.4f}"
+        #)
     return history
