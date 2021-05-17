@@ -78,6 +78,7 @@ class PSDataset(Dataset):
 
 N_DURATION_CLASSES = 4
 accepted_pitches = [ii for i in PITCHES.values() for ii in i]
+accepted_ks = KEY_SIGNATURES
 pitch_to_ix = {p: accepted_pitches.index(p) for p in accepted_pitches}
 ks_to_ix = {k: KEY_SIGNATURES.index(k) for k in KEY_SIGNATURES}
 # add PADDING TAD
