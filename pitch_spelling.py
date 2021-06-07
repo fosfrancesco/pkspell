@@ -188,6 +188,7 @@ def train_pitch_speller(
 @click.option("--bidirectional", default=True, type=bool)
 @click.option("--mode", default="both", type=str)
 @click.option("--cv", default=1, type=int)
+@click.option("--augmentation", default=True, type=bool)
 def start_experiment(
     model,
     epochs,
@@ -207,6 +208,7 @@ def start_experiment(
     bidirectional,
     mode,
     cv,
+    augmentation,
 ):
 
     # basepath = "./"  # to change if running locally or on colab
@@ -304,7 +306,7 @@ def start_experiment(
             transform_chrom,
             transform_diat,
             transform_key,
-            True,
+            augment_dataset=augmentation,
             sort=True,
             truncate=None,
         )
@@ -334,7 +336,7 @@ def start_experiment(
                 transform_chrom,
                 transform_diat,
                 transform_key,
-                True,
+                augment_dataset=augmentation,
                 sort=True,
                 truncate=None,
             )
@@ -344,10 +346,10 @@ def start_experiment(
                 transform_chrom,
                 transform_diat,
                 transform_key,
-                False,
+                augment_dataset=False,
             )
-            hyperparams_str += f"_fold{i + 1}"
-            writer = SummaryWriter(comment="_" + hyperparams_str, flush_secs=20)
+            writer = SummaryWriter(comment="_" + hyperparams_str + f"_fold{i+1}", flush_secs=20)
+            print(hyperparams_str)
             _, history = trainer(train_dataloader(train_dataset),
                                  val_dataloader(validation_dataset),
                                  writer=writer)
