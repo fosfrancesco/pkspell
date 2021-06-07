@@ -125,6 +125,7 @@ class RNNMultiTagger(nn.Module):
         hidden_dim2=24,
         n_layers=1,
         dropout=None,
+        dropout2=None,
         cell_type="GRU",
         bidirectional=True,
         mode="both",
@@ -163,6 +164,10 @@ class RNNMultiTagger(nn.Module):
             self.dropout = nn.Dropout(p=dropout)
         else:
             self.dropout = None
+        if dropout2 is not None and dropout2 > 0:
+            self.dropout2 = nn.Dropout(p=dropout2)
+        else:
+            self.dropout2 = None
 
         # Output layer. The input will be two times
         # the RNN size since we are using a bidirectional RNN.
@@ -190,8 +195,8 @@ class RNNMultiTagger(nn.Module):
         rnn_out, _ = self.rnn2(rnn_out)
         rnn_out, _ = nn.utils.rnn.pad_packed_sequence(rnn_out)
 
-        if self.dropout is not None:
-            rnn_out = self.dropout(rnn_out)
+        if self.dropout2 is not None:
+            rnn_out = self.dropout2(rnn_out)
         out_ks = self.top_layer_ks(rnn_out)
 
         return out_pitch, out_ks

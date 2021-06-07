@@ -44,6 +44,7 @@ def train_pitch_speller(
     layers,
     device,
     dropout,
+    dropout2,
     cell,
     decay,
     optimizer,
@@ -64,6 +65,7 @@ def train_pitch_speller(
     RNN_LAYERS = layers
     DEVICE = device
     DROPOUT = dropout
+    DROPOUT2 = dropout2
     RNN_CELL = cell
     OPTIMIZER = optimizer
     BIDIRECTIONAL = bidirectional
@@ -99,6 +101,7 @@ def train_pitch_speller(
             ks_to_ix,
             n_layers=RNN_LAYERS,
             dropout=DROPOUT,
+            dropout2=DROPOUT2,
             hidden_dim2=HIDDEN_DIM2,
             cell_type=RNN_CELL,
             bidirectional=BIDIRECTIONAL,
@@ -178,6 +181,7 @@ def train_pitch_speller(
 @click.option("--layers", default=1, type=int)
 @click.option("--device", type=str)
 @click.option("--dropout", default=0, type=float)
+@click.option("--dropout2", default=0, type=float)
 @click.option("--cell", default="GRU", type=str)
 @click.option("--optimizer", default="SGD", type=str)
 @click.option("--learn_all", is_flag=True, default=False)
@@ -195,6 +199,7 @@ def start_experiment(
     layers,
     device,
     dropout,
+    dropout2,
     cell,
     decay,
     optimizer,
@@ -241,6 +246,7 @@ def start_experiment(
         layers,
         device,
         dropout,
+        dropout2,
         cell,
         decay,
         optimizer,
@@ -251,15 +257,25 @@ def start_experiment(
 
     MODEL = model
     HIDDEN_DIM = hidden_dim
+    HIDDEN_DIM2 = hidden_dim2
     LEARNING_RATE = lr
     RNN_LAYERS = layers
     DROPOUT = dropout
+    DROPOUT2 = dropout2
     RNN_CELL = cell
     OPTIMIZER = optimizer
     BIDIRECTIONAL = bidirectional
     MODE = mode
     from torch.utils.tensorboard import SummaryWriter
-    hyperparams_str = f"{RNN_CELL}{MODEL}_{OPTIMIZER}_lr-{LEARNING_RATE}_nlayers-{RNN_LAYERS}_bs-{BATCH_SIZE}_dim-{HIDDEN_DIM}_dropout-{DROPOUT}_bidirectional-{BIDIRECTIONAL}_mode_{MODE}"
+    hyperparams_str = f"{RNN_CELL}{MODEL}_{OPTIMIZER}_lr-{LEARNING_RATE}_nlayers-{RNN_LAYERS}_bs-{BATCH_SIZE}_dim-{HIDDEN_DIM}"
+    if HIDDEN_DIM2 is not None:
+        hyperparams_str += f"_dim2-{HIDDEN_DIM2}"
+    hyperparams_str += f"_dropout-{DROPOUT}"
+    if DROPOUT2 is not None and DROPOUT2 > 0:
+        hyperparams_str += f"_dropout2-{DROPOUT2}"
+    hyperparams_str += f"_bidirectional-{BIDIRECTIONAL}_mode_{MODE}"
+    if not augmentation:
+        hyperparams_str += "_noaugment"
     
 
     def train_dataloader(ds):
