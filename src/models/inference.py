@@ -6,11 +6,13 @@ import torch
 from torch.utils.data import DataLoader
 from sklearn.metrics import accuracy_score
 
-from datasets import PSDataset
-from datasets import transform_chrom
-from datasets import transform_diat
-from datasets import transform_key
-from datasets import pad_collate
+from src.data.datasets import (
+    PSDataset,
+    transform_chrom,
+    transform_diat,
+    transform_key,
+    pad_collate,
+)
 
 
 def evaluate(model, dataset_path, device=None):
