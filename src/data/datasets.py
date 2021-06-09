@@ -5,9 +5,7 @@ from torch.utils.data import Dataset
 from torch.nn.utils.rnn import pad_sequence
 from torchvision import transforms
 
-
-from pitches import KEY_SIGNATURES, PITCHES
-from utils import PAD
+from src.utils.utils import PAD, KEY_SIGNATURES, PITCHES
 
 
 class PSDataset(Dataset):
