@@ -1,12 +1,9 @@
-# -*- coding: utf-8 -*-
 import click
-import logging
 from pathlib import Path
+import logging
 import subprocess
-import sys
 
-sys.path.append(str(Path(__file__).resolve().parents[2]))
-from src.utils.constants import ASAP_URL
+from utils.data.pytorch_dataset import ASAP_URL
 
 
 @click.command()
@@ -15,14 +12,16 @@ def main(folder):
     """ Download ASAP dataset from github.
     """
     logger = logging.getLogger(__name__)
-    logger.info("Downloading asap dataset")
+    logger.info("making final data set from raw data")
 
-    asap_path = Path(folder, "asap-dataset")
-    subprocess.run(["git", "clone", ASAP_URL, str(asap_path)])
+    subprocess.run(["git", "clone", ASAP_URL, folder])
 
 
 if __name__ == "__main__":
     log_fmt = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     logging.basicConfig(level=logging.INFO, format=log_fmt)
+
+    # not used in this stub but often useful for finding various files
+    project_dir = Path(__file__).resolve().parents[2]
 
     main()

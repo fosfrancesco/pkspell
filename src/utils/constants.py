@@ -40,4 +40,6 @@ double_acc_pitches = [
     ii for i in PITCHES.values() for ii in i if ii.endswith("##") or ii.endswith("--")
 ]
 
+accepted_intervals = [ii for i in INTERVALS.values() for ii in i]
+
 ASAP_URL = "https://github.com/fosfrancesco/asap-dataset.git"
