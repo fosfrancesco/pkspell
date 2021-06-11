@@ -117,7 +117,7 @@ class OneHotEncoder:
     def __init__(self, alphabet_len):
         self.alphabet_len = alphabet_len
 
-    def __call__(self, sample, weights=None):
+    def __call__(self, sample):
         onehot = np.zeros([len(sample), self.alphabet_len])
         tot_chars = len(sample)
         onehot[np.arange(tot_chars), sample] = 1

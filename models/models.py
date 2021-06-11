@@ -3,8 +3,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from src.utils.utils import PAD
-from src.utils.utils import closest_multiple
+from ..utils.constants import PAD
 
 
 class RNNTagger(nn.Module):

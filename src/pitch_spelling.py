@@ -53,7 +53,7 @@ def train_pitch_speller(
     mode,
     train_dataloader,
     val_dataloader=None,
-    writer=None
+    writer=None,
 ):
 
     MODEL = model
@@ -74,14 +74,9 @@ def train_pitch_speller(
     # ks rnn hyperparameter
     HIDDEN_DIM2 = hidden_dim2
 
-    # attention hyperparameter
-    NUM_HEAD = 2
-    NUM_LANDMARKS = 64
+    from models import RNNMultiTagger, RNNTagger
 
-    from models import RNNMultiTagger  # RNNMultNystromAttentionTagger,
-    from models import RNNNystromAttentionTagger, RNNTagger
-
-    if model == "RNN":
+    if model == "PKSpell":
         model = RNNTagger(
             len(midi_to_ix) + N_DURATION_CLASSES,
             HIDDEN_DIM,
@@ -93,7 +88,7 @@ def train_pitch_speller(
             bidirectional=BIDIRECTIONAL,
             mode=MODE,
         )
-    elif model == "RNNMulti":
+    elif model == "PKSpellsingle":
         model = RNNMultiTagger(
             len(midi_to_ix) + N_DURATION_CLASSES,
             HIDDEN_DIM,
@@ -107,28 +102,6 @@ def train_pitch_speller(
             bidirectional=BIDIRECTIONAL,
             mode=MODE,
         )
-    elif model == "Nystrom":
-        model = RNNNystromAttentionTagger(
-            len(midi_to_ix) + N_DURATION_CLASSES,
-            HIDDEN_DIM,
-            pitch_to_ix,
-            ks_to_ix,
-            n_layers=RNN_LAYERS,
-            num_head=NUM_HEAD,
-            num_landmarks=NUM_LANDMARKS,
-            bidirectional=BIDIRECTIONAL,
-            mode=MODE,
-        )
-        # model = RNNMultNystromAttentionTagger(
-        #     len(midi_to_ix) + N_DURATION_CLASSES,
-        #     HIDDEN_DIM,
-        #     pitch_to_ix,
-        #     ks_to_ix,
-        #     n_layers=RNN_LAYERS,
-        #     hidden_dim2=HIDDEN_DIM2,
-        #     num_head=NUM_HEAD,
-        #     num_landmarks=NUM_LANDMARKS,
-        # )
 
     from torch import optim
     from torch.optim import lr_scheduler
@@ -210,8 +183,6 @@ def start_experiment(
     cv,
     augmentation,
 ):
-
-    # basepath = "./"  # to change if running locally or on colab
     # load the asap datasets with ks
     with open(Path("./asapks.pkl"), "rb") as fid:
         full_dict_dataset = pickle.load(fid)
@@ -229,7 +200,10 @@ def start_experiment(
     # remove mozart Fantasie because of incoherent key signature
     paths = [p for p in paths if p != "Mozart/Fantasie_475/xml_score.musicxml"]
 
-    print(len(paths), "pieces after removing overlapping with musedata and Mozart Fantasie")
+    print(
+        len(paths),
+        "pieces after removing overlapping with musedata and Mozart Fantasie",
+    )
 
     paths = sorted(paths)
 
@@ -269,6 +243,7 @@ def start_experiment(
     BIDIRECTIONAL = bidirectional
     MODE = mode
     from torch.utils.tensorboard import SummaryWriter
+
     hyperparams_str = f"{RNN_CELL}{MODEL}_{OPTIMIZER}_lr-{LEARNING_RATE}_nlayers-{RNN_LAYERS}_bs-{BATCH_SIZE}_dim-{HIDDEN_DIM}"
     if HIDDEN_DIM2 is not None:
         hyperparams_str += f"_dim2-{HIDDEN_DIM2}"
@@ -278,7 +253,6 @@ def start_experiment(
     hyperparams_str += f"_bidirectional-{BIDIRECTIONAL}_mode_{MODE}"
     if not augmentation:
         hyperparams_str += "_noaugment"
-    
 
     def train_dataloader(ds):
         return DataLoader(
@@ -291,11 +265,7 @@ def start_experiment(
 
     def val_dataloader(ds):
         return DataLoader(
-            ds,
-            batch_size=1,
-            shuffle=False,
-            collate_fn=pad_collate,
-            num_workers=1,
+            ds, batch_size=1, shuffle=False, collate_fn=pad_collate, num_workers=1,
         )
 
     if learn_all:
@@ -311,7 +281,10 @@ def start_experiment(
             truncate=None,
         )
         hyperparams_str += "_all"
-        _, history = trainer(train_dataloader(train_dataset), writer=SummaryWriter(comment="_" + hyperparams_str, flush_secs=20))
+        _, history = trainer(
+            train_dataloader(train_dataset),
+            writer=SummaryWriter(comment="_" + hyperparams_str, flush_secs=20),
+        )
     else:
         from sklearn.model_selection import KFold
 
@@ -319,16 +292,17 @@ def start_experiment(
         paths = np.array(paths)
         for i, (idx_train, idx_validation) in enumerate(cross_validator.split(paths)):
             # Divide train and validation set
-            #path_train, path_validation = sklearn.model_selection.train_test_split(
+            # path_train, path_validation = sklearn.model_selection.train_test_split(
             #    paths,
             #    test_size=0.15,
             #    random_state=seed+i,
-            #)
+            # )
             path_train = paths[idx_train]
             path_validation = paths[idx_validation]
             print(path_validation)
-            print("Train and validation lenghts: ",
-                  len(path_train), len(path_validation))
+            print(
+                "Train and validation lenghts: ", len(path_train), len(path_validation)
+            )
 
             train_dataset = PSDataset(
                 dict_dataset,
@@ -348,11 +322,15 @@ def start_experiment(
                 transform_key,
                 augment_dataset=False,
             )
-            writer = SummaryWriter(comment="_" + hyperparams_str + f"_fold{i+1}", flush_secs=20)
+            writer = SummaryWriter(
+                comment="_" + hyperparams_str + f"_fold{i+1}", flush_secs=20
+            )
             print(hyperparams_str)
-            _, history = trainer(train_dataloader(train_dataset),
-                                 val_dataloader(validation_dataset),
-                                 writer=writer)
+            _, history = trainer(
+                train_dataloader(train_dataset),
+                val_dataloader(validation_dataset),
+                writer=writer,
+            )
 
 
 if __name__ == "__main__":
