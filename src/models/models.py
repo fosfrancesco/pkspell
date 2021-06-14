@@ -3,10 +3,10 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from ..utils.constants import PAD
+from src.utils.constants import PAD
 
 
-class RNNTagger(nn.Module):
+class PKSpell_single(nn.Module):
     """Vanilla RNN Model, slide 12 of powerpoint presentation"""
 
     def __init__(
@@ -21,10 +21,12 @@ class RNNTagger(nn.Module):
         bidirectional=True,
         mode="both",
     ):
-        super(RNNTagger, self).__init__()
+        super(PKSpell_single, self).__init__()
 
         self.n_out_pitch = len(pitch_to_ix)
         self.n_out_ks = len(ks_to_ix)
+        if hidden_dim % 2 != 0:
+            raise ValueError("Hidden_dim must be an even integer")
         self.hidden_dim = hidden_dim
 
         if cell_type == "GRU":
@@ -114,7 +116,7 @@ class RNNTagger(nn.Module):
         )
 
 
-class RNNMultiTagger(nn.Module):
+class PKSpell(nn.Module):
     """RNN decoupling key from pitch spelling by adding a second RNN,
     slide 13 of powerpoint presentation
     """
@@ -133,10 +135,15 @@ class RNNMultiTagger(nn.Module):
         bidirectional=True,
         mode="both",
     ):
-        super(RNNMultiTagger, self).__init__()
+        super(PKSpell, self).__init__()
 
         self.n_out_pitch = len(pitch_to_ix)
         self.n_out_ks = len(ks_to_ix)
+
+        if hidden_dim % 2 != 0:
+            raise ValueError("Hidden_dim must be an even integer")
+        if hidden_dim2 % 2 != 0:
+            raise ValueError("Hidden_dim2 must be an even integer")
         self.hidden_dim = hidden_dim
         self.hidden_dim2 = hidden_dim2
 
@@ -224,8 +231,6 @@ class RNNMultiTagger(nn.Module):
             loss = self.loss_ks(scores_ks, keysignatures)
         elif self.mode == "ps":
             loss = self.loss_pitch(scores_pitch, pitches)
-        else:
-            raise Exception("self.mode can only be in ['both','ks','ps']")
         return loss
 
     def predict(self, sentences, sentences_len):

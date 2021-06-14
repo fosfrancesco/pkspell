@@ -17,6 +17,18 @@ from src.utils.utils import (
 )
 
 
+def transp_score(score):
+    """ For each input generate len(accepted_intervals) transposed scores.
+
+    Args:
+        score (music21.Score): the score to transpose
+
+    Returns:
+        list[music21.Score]: a list of transposed scores
+    """
+    return [score.transpose(interval) for interval in accepted_intervals]
+
+
 @click.command()
 @click.option("--raw-folder", type=click.Path(exists=True), default=Path("./data/raw"))
 @click.option(

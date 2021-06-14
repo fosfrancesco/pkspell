@@ -1,15 +1,18 @@
+import pytest
+
 import numpy as np
 import torch
-from src.models.models import RNNTagger, RNNMultiTagger
+from src.models.models import PKSpell, PKSpell_single
 from src.data.pytorch_datasets import pitch_to_ix, ks_to_ix
+from pathlib import Path
 
 
-def test_RNNTagger():
+def test_PKSpell_single():
     n_features = 12
     piece_len = [20, 9, 8, 5]
     batch_size = 4
 
-    model = RNNTagger(
+    model = PKSpell_single(
         n_features,
         12,
         pitch_to_ix,
@@ -48,12 +51,12 @@ def test_RNNTagger():
         assert len(prediction[1][i]) == l
 
 
-def test_RNNMultiTagger():
+def test_PKSpell():
     n_features = 12
     piece_len = [20, 9, 8, 5]
     batch_size = 4
 
-    model = RNNMultiTagger(
+    model = PKSpell(
         n_features,
         12,
         pitch_to_ix,
@@ -90,3 +93,46 @@ def test_RNNMultiTagger():
     for i, l in enumerate(piece_len):
         assert len(prediction[0][i]) == l
         assert len(prediction[1][i]) == l
+
+
+def test_PKSpell_odd_hidden_dim():
+    hidden_dim = 11
+    hidden_dim2 = 7
+
+    with pytest.raises(ValueError):
+        model = PKSpell(
+            5,
+            hidden_dim,
+            pitch_to_ix,
+            ks_to_ix,
+            n_layers=1,
+            cell_type="GRU",
+            dropout=None,
+            bidirectional=True,
+            mode="both",
+        )
+
+    with pytest.raises(ValueError):
+        model = PKSpell(
+            5,
+            10,
+            pitch_to_ix,
+            ks_to_ix,
+            n_layers=1,
+            cell_type="GRU",
+            dropout=None,
+            bidirectional=True,
+            mode="both",
+            hidden_dim2=hidden_dim2,
+        )
+
+
+def test_import_pretrained_state_dict():
+    # import pkspell
+    model = PKSpell(17, 300, pitch_to_ix, ks_to_ix, hidden_dim2=24)
+    model.load_state_dict(torch.load(Path("models/pkspell_statedict.pt")))
+
+    # import pkspell_single
+    model = PKSpell_single(17, 300, pitch_to_ix, ks_to_ix)
+    model.load_state_dict(torch.load(Path("models/pkspell_single_statedict.pt")))
+    assert True

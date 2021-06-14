@@ -5,73 +5,75 @@ from torch.utils.data import Dataset
 from torch.nn.utils.rnn import pad_sequence
 from torchvision import transforms
 
-from ..utils.constants import PAD, KEY_SIGNATURES, PITCHES
+from src.utils.constants import PAD, KEY_SIGNATURES, PITCHES
 
 
 class PSDataset(Dataset):
     def __init__(
         self,
-        dict_dataset,
+        list_of_dict_dataset,
         paths,
-        transf_c,
-        transf_d,
+        transf_pc,
+        transf_tpc,
         transf_k,
         augment_dataset=False,
         sort=False,
         truncate=None,
     ):
-        """
-        truncate: either None or an integer.
-        pad_to_multiple: either None or an integer. If not None, pad the sequence until reaching a multiple of the specified value
-        """
         if sort:  # sort (in reverse order) to reduce padding
-            dict_dataset = sorted(
-                dict_dataset, key=lambda e: (len(e["midi_number"])), reverse=True
+            list_of_dict_dataset = sorted(
+                list_of_dict_dataset,
+                key=lambda e: (len(e["midi_number"])),
+                reverse=True,
             )
         if not augment_dataset:  # remove the transposed pieces
-            dict_dataset = [e for e in dict_dataset if e["transposed_of"] == "P1"]
+            list_of_dict_dataset = [
+                e for e in list_of_dict_dataset if e["transposed_of"] == "P1"
+            ]
         # consider only pieces in paths
-        dict_dataset = [e for e in dict_dataset if e["original_path"] in paths]
+        list_of_dict_dataset = [
+            e for e in list_of_dict_dataset if e["original_path"] in paths
+        ]
 
         # extract the useful data from dataset
-        self.chromatic_sequences = [e["midi_number"] for e in dict_dataset]
-        self.diatonic_sequences = [e["pitches"] for e in dict_dataset]
-        self.durations = [e["duration"] for e in dict_dataset]
-        self.ks = [e["key_signatures"] for e in dict_dataset]
+        self.pc_sequences = [e["midi_number"] for e in list_of_dict_dataset]
+        self.tpc_sequences = [e["pitches"] for e in list_of_dict_dataset]
+        self.durations = [e["duration"] for e in list_of_dict_dataset]
+        self.ks = [e["key_signatures"] for e in list_of_dict_dataset]
 
         # the transformations to apply to data
-        self.transf_c = transf_c
-        self.transf_d = transf_d
+        self.transf_pc = transf_pc
+        self.transf_tpc = transf_tpc
         self.transf_ks = transf_k
 
         # truncate and pad
         self.truncate = truncate
 
     def __len__(self):
-        return len(self.chromatic_sequences)
+        return len(self.pc_sequences)
 
     def __getitem__(self, idx):
-        chromatic_seq = self.chromatic_sequences[idx]
-        diatonic_seq = self.diatonic_sequences[idx]
+        pc_seq = self.pc_sequences[idx]
+        tpc_seq = self.tpc_sequences[idx]
         duration_seq = self.durations[idx]
         ks_seq = self.ks[idx]
 
         # transform
-        chromatic_seq = self.transf_c(chromatic_seq, duration_seq)
-        diatonic_seq = self.transf_d(diatonic_seq)
+        pc_seq = self.transf_pc(pc_seq, duration_seq)
+        tpc_seq = self.transf_tpc(tpc_seq)
         ks_seq = self.transf_ks(ks_seq)
 
         if self.truncate is not None:
-            if len(diatonic_seq) > self.truncate:
-                chromatic_seq = chromatic_seq[0 : self.truncate]
-                diatonic_seq = diatonic_seq[0 : self.truncate]
+            if len(tpc_seq) > self.truncate:
+                pc_seq = pc_seq[0 : self.truncate]
+                tpc_seq = tpc_seq[0 : self.truncate]
                 ks_seq = ks_seq[0 : self.truncate]
 
         # sanity check
-        assert len(chromatic_seq) == len(diatonic_seq) == len(ks_seq)
-        seq_len = len(diatonic_seq)
+        assert len(pc_seq) == len(tpc_seq) == len(ks_seq)
+        seq_len = len(tpc_seq)
 
-        return chromatic_seq, diatonic_seq, ks_seq, seq_len
+        return pc_seq, tpc_seq, ks_seq, seq_len
 
 
 N_DURATION_CLASSES = 4
@@ -86,14 +88,6 @@ ks_to_ix[PAD] = len(KEY_SIGNATURES)
 midi_to_ix = {m: m for m in range(12)}
 # add PADDING TAD
 midi_to_ix[PAD] = 12
-
-# print(midi_to_ix[1])
-# print(len(midi_to_ix))
-
-
-# class Pitch2Diatonic():
-#     def __call__(self, in_seq):
-#         return [p for p in in_seq]
 
 
 class Pitch2Int:
@@ -168,8 +162,8 @@ class MultInputCompose(object):
 
 
 ### Define the preprocessing pipeline
-transform_diat = transforms.Compose([Pitch2Int(), ToTensorLong()])
-transform_chrom = MultInputCompose(
+transform_tpc = transforms.Compose([Pitch2Int(), ToTensorLong()])
+transform_pc = MultInputCompose(
     [DurationOneHotEncoder(len(midi_to_ix), N_DURATION_CLASSES), ToTensorFloat()]
 )
 transform_key = transforms.Compose([Ks2Int(), ToTensorLong()])
@@ -178,14 +172,14 @@ transform_key = transforms.Compose([Ks2Int(), ToTensorLong()])
 def pad_collate(batch):
     (chromatic_seq, diatonic_seq, ks_seq, l) = zip(*batch)
 
-    chromatic_seq_pad = pad_sequence(chromatic_seq, padding_value=midi_to_ix[PAD])
-    diatonic_seq_pad = pad_sequence(diatonic_seq, padding_value=pitch_to_ix[PAD])
+    pc_seq_pad = pad_sequence(chromatic_seq, padding_value=midi_to_ix[PAD])
+    tpc_seq_pad = pad_sequence(diatonic_seq, padding_value=pitch_to_ix[PAD])
     ks_seq_pad = pad_sequence(ks_seq, padding_value=ks_to_ix[PAD])
 
     # sort the sequences by length
     seq_lengths, perm_idx = torch.Tensor(l).sort(0, descending=True)
-    chromatic_seq_pad = chromatic_seq_pad[:, perm_idx, :]
-    diatonic_seq_pad = diatonic_seq_pad[:, perm_idx]
+    pc_seq_pad = pc_seq_pad[:, perm_idx, :]
+    tpc_seq_pad = tpc_seq_pad[:, perm_idx]
     ks_seq_pad = ks_seq_pad[:, perm_idx]
 
-    return chromatic_seq_pad, diatonic_seq_pad, ks_seq_pad, seq_lengths
+    return pc_seq_pad, tpc_seq_pad, ks_seq_pad, seq_lengths

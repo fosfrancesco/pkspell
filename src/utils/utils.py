@@ -1,9 +1,7 @@
-from numba import njit
 from pathlib import Path
-
+import music21 as m21
 import numpy as np
-
-from .constants import INTERVALS, KEY_SIGNATURES, accepted_intervals
+from src.utils.constants import INTERVALS, KEY_SIGNATURES, accepted_intervals
 
 
 def keep_best_transpositions(full_dict_dataset):
@@ -106,36 +104,11 @@ def score2ks(score):
     return out
 
 
-def transp_score(score):
-    """ For each input return len(accepted_intervals) transposed scores"""
-    return [score.transpose(interval) for interval in accepted_intervals]
-
-
 def transp_note_list(note_list):
     """ For each input return len(accepted_intervals) transposed list of notes"""
     return [
         [n.transpose(interval) for n in note_list] for interval in accepted_intervals
     ]
-
-
-# def acc_simple_enough(score, accepted_ratio=0.2):
-#     pitches = score2pitches(score)
-#     double_acc = sum(el in double_acc_pitches for el in pitches)
-#     if double_acc / len(pitches) < accepted_ratio:
-#         return True
-#     else:
-#         return False
-
-
-@njit
-def closest_multiple(n: int, x: int):
-    if x > n:
-        return x
-    else:
-        return int(x * np.ceil(n / x))
-
-
-closest_multiple(6900, 2000)
 
 
 def root_folder(p):

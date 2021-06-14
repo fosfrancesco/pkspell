@@ -10,17 +10,17 @@ import sklearn.model_selection
 import torch
 from torch.utils.data import DataLoader
 
-from pitches import keep_best_transpositions
-from utils import root_folder
-from datasets import (
+from src.utils.utils import keep_best_transpositions
+from src.utils.utils import root_folder
+from src.data.pytorch_datasets import (
     N_DURATION_CLASSES,
     PSDataset,
     pad_collate,
     ks_to_ix,
     midi_to_ix,
     pitch_to_ix,
-    transform_chrom,
-    transform_diat,
+    transform_pc,
+    transform_tpc,
     transform_key,
 )
 
@@ -76,7 +76,7 @@ def train_pitch_speller(
 
     from models import RNNMultiTagger, RNNTagger
 
-    if model == "PKSpell":
+    if model == "PKSpellsingle":
         model = RNNTagger(
             len(midi_to_ix) + N_DURATION_CLASSES,
             HIDDEN_DIM,
@@ -88,7 +88,7 @@ def train_pitch_speller(
             bidirectional=BIDIRECTIONAL,
             mode=MODE,
         )
-    elif model == "PKSpellsingle":
+    elif model == "PKSpell":
         model = RNNMultiTagger(
             len(midi_to_ix) + N_DURATION_CLASSES,
             HIDDEN_DIM,
@@ -125,7 +125,7 @@ def train_pitch_speller(
             optimizer, [N_EPOCHS // 2], gamma=0.1, verbose=True
         )
 
-    from train import training_loop
+    from src.models.train import training_loop
 
     history = training_loop(
         model,
@@ -273,8 +273,8 @@ def start_experiment(
         train_dataset = PSDataset(
             dict_dataset,
             paths,
-            transform_chrom,
-            transform_diat,
+            transform_pc,
+            transform_tpc,
             transform_key,
             augment_dataset=augmentation,
             sort=True,
@@ -307,8 +307,8 @@ def start_experiment(
             train_dataset = PSDataset(
                 dict_dataset,
                 path_train,
-                transform_chrom,
-                transform_diat,
+                transform_pc,
+                transform_tpc,
                 transform_key,
                 augment_dataset=augmentation,
                 sort=True,
@@ -317,8 +317,8 @@ def start_experiment(
             validation_dataset = PSDataset(
                 dict_dataset,
                 path_validation,
-                transform_chrom,
-                transform_diat,
+                transform_pc,
+                transform_tpc,
                 transform_key,
                 augment_dataset=False,
             )
