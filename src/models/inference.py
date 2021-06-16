@@ -6,7 +6,7 @@ import torch
 from torch.utils.data import DataLoader
 from sklearn.metrics import accuracy_score
 
-from src.data.datasets import (
+from src.data.pytorch_datasets import (
     PSDataset,
     transform_chrom,
     transform_diat,

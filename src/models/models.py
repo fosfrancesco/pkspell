@@ -7,7 +7,7 @@ from src.utils.constants import PAD
 
 
 class PKSpell_single(nn.Module):
-    """Vanilla RNN Model, slide 12 of powerpoint presentation"""
+    """Vanilla RNN Model used for comparison. Only a single RNN is used."""
 
     def __init__(
         self,
@@ -36,13 +36,12 @@ class PKSpell_single(nn.Module):
         else:
             raise ValueError(f"Unknown RNN cell type: {cell_type}")
 
-        # RNN layer. We're using a bidirectional GRU
+        # RNN layer.
         self.rnn = rnn_cell(
             input_size=input_dim,
             hidden_size=hidden_dim // 2 if bidirectional else hidden_dim,
             bidirectional=bidirectional,
             num_layers=n_layers,
-            # dropout=dropout if dropout is not None else 0
         )
 
         if dropout is not None and dropout > 0:
@@ -50,8 +49,7 @@ class PKSpell_single(nn.Module):
         else:
             self.dropout = None
 
-        # Output layer. The input will be two times
-        # the RNN size since we are using a bidirectional RNN.
+        # Output layers. The input will be two times
         self.top_layer_pitch = nn.Linear(hidden_dim, self.n_out_pitch)
         self.top_layer_ks = nn.Linear(hidden_dim, self.n_out_ks)
 
@@ -117,8 +115,9 @@ class PKSpell_single(nn.Module):
 
 
 class PKSpell(nn.Module):
-    """RNN decoupling key from pitch spelling by adding a second RNN,
-    slide 13 of powerpoint presentation
+    """Models that decouples key signature estimation from pitch spelling by adding a second RNN.
+
+    This model reached state of the art performances for pitch spelling.
     """
 
     def __init__(
@@ -128,7 +127,7 @@ class PKSpell(nn.Module):
         pitch_to_ix,
         ks_to_ix,
         hidden_dim2=24,
-        n_layers=1,
+        rnn_depth=1,
         dropout=None,
         dropout2=None,
         cell_type="GRU",
@@ -154,20 +153,18 @@ class PKSpell(nn.Module):
         else:
             raise ValueError(f"Unknown RNN cell type: {cell_type}")
 
-        # RNN layer. We're using a bidirectional GRU
+        # RNN layer.
         self.rnn = rnn_cell(
             input_size=input_dim,
             hidden_size=hidden_dim // 2 if bidirectional else hidden_dim,
             bidirectional=bidirectional,
-            # dropout=dropout,
-            num_layers=n_layers,
+            num_layers=rnn_depth,
         )
         self.rnn2 = rnn_cell(
             input_size=hidden_dim,
             hidden_size=hidden_dim2 // 2 if bidirectional else hidden_dim2,
             bidirectional=bidirectional,
-            # dropout=dropout,
-            num_layers=n_layers,
+            num_layers=rnn_depth,
         )
 
         if dropout is not None and dropout > 0:
@@ -179,8 +176,7 @@ class PKSpell(nn.Module):
         else:
             self.dropout2 = None
 
-        # Output layer. The input will be two times
-        # the RNN size since we are using a bidirectional RNN.
+        # Output layers.
         self.top_layer_pitch = nn.Linear(hidden_dim, self.n_out_pitch)
         self.top_layer_ks = nn.Linear(hidden_dim2, self.n_out_ks)
 
