@@ -158,6 +158,10 @@ def parenthetic_contents(string):
 @click.option("--process-asap", default=True, type=bool)
 @click.option("--process-musedata", default=True, type=bool)
 def main(raw_folder, processed_folder, process_asap, process_musedata):
+    # create the data/processed folder if it does not exist
+    path = Path(processed_folder)
+    path.mkdir(parents=True, exist_ok=True)
+
     # process Musedata (no augmentation)
     if process_musedata:
         print("Preprocessing the MuseData noisy dataset")

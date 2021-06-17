@@ -16,6 +16,10 @@ from src.utils.constants import ASAP_URL
 @click.command()
 @click.option("--folder", type=click.Path(exists=True), default=Path("./data/raw"))
 def main(folder):
+    # create the raw folder in data if it does not exist
+    path = Path(folder)
+    path.mkdir(parents=True, exist_ok=True)
+
     # Download ASAP dataset from github.
     print("Downloading asap dataset for training")
     asap_path = Path(folder, "asap-dataset")
