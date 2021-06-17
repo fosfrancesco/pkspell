@@ -2,14 +2,19 @@ import click
 import numpy as np
 import pickle
 import torch
+import os
 
 from torch.utils.data import DataLoader
 from sklearn.metrics import accuracy_score
+from pathlib import Path
 
+import sys
+
+sys.path.append(str(Path(__file__).resolve().parents[2]))
 from src.data.pytorch_datasets import (
     PSDataset,
-    transform_chrom,
-    transform_diat,
+    transform_pc,
+    transform_tpc,
     transform_key,
     pad_collate,
 )
@@ -35,8 +40,8 @@ def evaluate(model, dataset_path, device=None):
     mdata_dataset = PSDataset(
         full_mdata_dict_dataset,
         mdata_paths,
-        transform_chrom,
-        transform_diat,
+        transform_pc,
+        transform_tpc,
         transform_key,
         sort=False,
         augment_dataset=False,
@@ -81,7 +86,7 @@ def evaluate(model, dataset_path, device=None):
     for sequence in all_inputs:
         #     print(sequence)
         author = [
-            e["original_path"].split("\\")[-1][:3]
+            e["original_path"].split(os.sep)[-1][:3]
             for e in full_mdata_dict_dataset
             if len(e["midi_number"]) == len(sequence)
             and list(e["midi_number"]) == list(sequence)
@@ -135,8 +140,8 @@ def evaluate(model, dataset_path, device=None):
 
 
 @click.command()
-@click.option("--model", help="Path to a saved PyTorch .pt model")
-@click.option("--dataset", help="Path to one of the datasets")
+@click.option("--model", help="Path to a saved PyTorch .pt model", type=click.Path(exists=True), default=Path("./models/pkspell.pt"))
+@click.option("--dataset", help="Path to one of the datasets", type=click.Path(exists=True), default=Path("./data/processed/musedata.pkl") )
 @click.option(
     "--device",
     default="cpu",
