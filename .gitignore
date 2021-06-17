@@ -76,11 +76,11 @@ target/
 .ipynb_checkpoints/
 
 # exclude data from source control
-data/raw/
-data/processed/
+/data/raw/
+/data/processed/
 # but keep the empty directories
-!data/raw/.gitkeep
-!data/processed/.gitkeep 
+!/data/raw/.gitkeep
+!/data/processed/.gitkeep 
 
 # exclude models/temp from source control
 models/temp
