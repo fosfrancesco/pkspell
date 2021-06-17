@@ -151,9 +151,11 @@ def parenthetic_contents(string):
 
 
 @click.command()
-@click.option("--raw-folder", type=click.Path(exists=True), default=Path("./data/raw"))
+@click.option("--raw-folder", type=click.Path(exists=False), default=Path("./data/raw"))
 @click.option(
-    "--processed-folder", type=click.Path(exists=True), default=Path("./data/processed")
+    "--processed-folder",
+    type=click.Path(exists=False),
+    default=Path("./data/processed"),
 )
 @click.option("--process-asap", default=True, type=bool)
 @click.option("--process-musedata", default=True, type=bool)
