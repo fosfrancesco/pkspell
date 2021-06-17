@@ -25,9 +25,6 @@ def evaluate(model, dataset_path, device=None):
         e["key_signatures"] = np.zeros(len(e["pitches"]))
     mdata_paths = list(set([e["original_path"] for e in full_mdata_dict_dataset]))
 
-    # # remove the symbphony No.100 from Haydn because of the enharmonic transposition
-    # paths.remove("datasets\\opnd\\haydndoversyms-10004m.opnd-m")
-
     # print(paths)
     print(len(mdata_paths), "different pieces")
     print(

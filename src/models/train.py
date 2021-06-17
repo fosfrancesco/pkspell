@@ -9,8 +9,9 @@ from collections import defaultdict
 from torch.utils.data import DataLoader
 from sklearn.metrics import accuracy_score
 from pathlib import Path
-from torch.utils.tensorboard import SummaryWriter
+import sys
 
+sys.path.append(str(Path(__file__).resolve().parents[2]))
 from src.utils.utils import keep_best_transpositions
 from src.data.pytorch_datasets import (
     N_DURATION_CLASSES,
@@ -42,16 +43,12 @@ def training_loop(
     val_dataloader=None,
     device=None,
     scheduler=None,
-    writer=None,
 ):
     if device is None:
         device = (
             torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
         )
         print(f"Training on device: {device}")
-
-    if writer is None:
-        writer = SummaryWriter(flush_secs=20)
 
     # Move model to GPU if needed
     model = model.to(device)
@@ -75,9 +72,6 @@ def training_loop(
             loss.backward()
             optimizer.step()
             loss_sum += loss.item()
-            writer.add_scalar(
-                "Loss/train", loss.item(), (i_epoch - 1) * len(train_dataloader) + idx
-            )
 
             with torch.no_grad():
                 predicted_pitch, predicted_ks = model.predict(seqs, lens)
@@ -96,8 +90,11 @@ def training_loop(
         history["train_loss"].append(train_loss)
         history["train_accuracy_pitch"].append(train_accuracy_pitch)
         history["train_accuracy_ks"].append(train_accuracy_ks)
-        writer.add_scalar("Accuracy_Pitch/train", train_accuracy_pitch, i_epoch)
-        writer.add_scalar("Accuracy_KS/train", train_accuracy_ks, i_epoch)
+        print(
+            "Train Loss: {}, Train Accuracy (Pitch): {}, Train Accuracy (KS): {}".format(
+                train_loss, train_accuracy_pitch, train_accuracy_ks
+            )
+        )
 
         if val_dataloader is not None:
             # Evaluate on the validation set
@@ -123,117 +120,96 @@ def training_loop(
 
             history["val_accuracy_pitch"].append(val_accuracy_pitch)
             history["val_accuracy_ks"].append(val_accuracy_ks)
+            print(
+                "Validation Accuracy (Pitch): {}, Validation Accuracy (KS): {}".format(
+                    val_accuracy_pitch, val_accuracy_ks
+                )
+            )
 
-            writer.add_scalar("Accuracy_Pitch/val", val_accuracy_pitch, i_epoch)
-            writer.add_scalar("Accuracy_KS/val", val_accuracy_ks, i_epoch)
         if scheduler is not None:
             scheduler.step()
 
         # save the model
-        torch.save(model, "./models/temp/model_temp_epoch{}.pkl".format(i_epoch))
+        torch.save(model, Path("./models/temp/model_temp_epoch{}.pkl".format(i_epoch)))
 
     return history
 
 
-def train_pitch_speller(
+def train_pkspell(
     model,
     epochs,
     lr,
     hidden_dim,
     momentum,
     hidden_dim2,
-    layers,
+    rnn_depth,
     device,
     dropout,
     dropout2,
-    cell,
-    decay,
+    rnn_cell,
+    weight_decay,
     optimizer,
     bidirectional,
     mode,
     train_dataloader,
     val_dataloader=None,
-    writer=None,
 ):
-
-    MODEL = model
-    N_EPOCHS = epochs
-    HIDDEN_DIM = hidden_dim
-    LEARNING_RATE = lr
-    WEIGHT_DECAY = decay
-    MOMENTUM = momentum
-    RNN_LAYERS = layers
-    DEVICE = device
-    DROPOUT = dropout
-    DROPOUT2 = dropout2
-    RNN_CELL = cell
-    OPTIMIZER = optimizer
-    BIDIRECTIONAL = bidirectional
-    MODE = mode
-
-    # ks rnn hyperparameter
-    HIDDEN_DIM2 = hidden_dim2
-
     from models import PKSpell, PKSpell_single
 
-    if MODEL == "PKSpellsingle":
-        MODEL = PKSpell_single(
+    if model == "PKSpellsingle":
+        model = PKSpell_single(
             len(midi_to_ix) + N_DURATION_CLASSES,
-            HIDDEN_DIM,
+            hidden_dim,
             pitch_to_ix,
             ks_to_ix,
-            n_layers=RNN_LAYERS,
-            dropout=DROPOUT,
-            cell_type=RNN_CELL,
-            bidirectional=BIDIRECTIONAL,
-            mode=MODE,
+            rnn_depth=rnn_depth,
+            dropout=dropout,
+            cell_type=rnn_cell,
+            bidirectional=bidirectional,
+            mode=mode,
         )
-    elif MODEL == "PKSpell":
-        MODEL = PKSpell(
+    elif model == "PKSpell":
+        model = PKSpell(
             len(midi_to_ix) + N_DURATION_CLASSES,
-            HIDDEN_DIM,
+            hidden_dim,
             pitch_to_ix,
             ks_to_ix,
-            n_layers=RNN_LAYERS,
-            dropout=DROPOUT,
-            dropout2=DROPOUT2,
-            hidden_dim2=HIDDEN_DIM2,
-            cell_type=RNN_CELL,
-            bidirectional=BIDIRECTIONAL,
-            mode=MODE,
+            rnn_depth=rnn_depth,
+            dropout=dropout,
+            dropout2=dropout2,
+            hidden_dim2=hidden_dim2,
+            cell_type=rnn_cell,
+            bidirectional=bidirectional,
+            mode=mode,
         )
+    else:
+        raise Exception("Model must be either 'PKSpellsingle' or  'PkSpell'")
 
     from torch import optim
     from torch.optim import lr_scheduler
 
-    if OPTIMIZER == "SGD":
+    if optimizer == "SGD":
         optimizer = optim.SGD(
-            MODEL.parameters(),
-            lr=LEARNING_RATE,
-            momentum=MOMENTUM,
-            weight_decay=WEIGHT_DECAY,
+            model.parameters(), lr=lr, momentum=momentum, weight_decay=weight_decay,
         )
         scheduler = lr_scheduler.MultiStepLR(
-            optimizer, [N_EPOCHS // 2], gamma=0.1, verbose=True
+            optimizer, [epochs // 2], gamma=0.1, verbose=True
         )
-    elif OPTIMIZER == "Adam":
-        optimizer = optim.Adam(
-            MODEL.parameters(), lr=LEARNING_RATE, weight_decay=WEIGHT_DECAY
-        )
+    elif optimizer == "Adam":
+        optimizer = optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
         scheduler = lr_scheduler.MultiStepLR(
-            optimizer, [N_EPOCHS // 2], gamma=0.1, verbose=True
+            optimizer, [epochs // 2], gamma=0.1, verbose=True
         )
-
-    from src.models.train import training_loop
+    else:
+        raise Exception("Only SGD and Adam are supported optimizers.")
 
     history = training_loop(
         model,
         optimizer,
         train_dataloader,
-        epochs=N_EPOCHS,
+        epochs=epochs,
         val_dataloader=val_dataloader,
-        writer=writer,
-        device=DEVICE,
+        device=device,
         scheduler=scheduler,
     )
 
@@ -242,7 +218,7 @@ def train_pitch_speller(
 
 # %%
 @click.command()
-@click.option("--model", default="RNNMulti", type=str)
+@click.option("--model", default="PKSpell", type=str)
 @click.option("--epochs", default=40, type=int)
 @click.option("--lr", default=0.01, type=float)
 @click.option("--momentum", default=0.9, type=float)
@@ -250,7 +226,7 @@ def train_pitch_speller(
 @click.option("--hidden_dim", default=300, type=int)
 @click.option("--hidden_dim2", default=24, type=int)
 @click.option("--bs", default=32, type=int)
-@click.option("--layers", default=1, type=int)
+@click.option("--rnn_depth", default=1, type=int)
 @click.option("--device", type=str)
 @click.option("--dropout", default=0.5, type=float)
 @click.option("--dropout2", default=0.5, type=float)
@@ -268,7 +244,7 @@ def start_experiment(
     bs,
     momentum,
     hidden_dim2,
-    layers,
+    rnn_depth,
     device,
     dropout,
     dropout2,
@@ -280,8 +256,9 @@ def start_experiment(
     mode,
     augmentation,
 ):
+    print("Loading the augmented ASAP dataset")
     # load the asap datasets with ks
-    with open(Path("./asapks.pkl"), "rb") as fid:
+    with open(Path("./data/processed/asapks.pkl"), "rb") as fid:
         full_list_of_dict_dataset = pickle.load(fid)
 
     paths = list(set([e["original_path"] for e in full_list_of_dict_dataset]))
@@ -296,14 +273,14 @@ def start_experiment(
     from functools import partial
 
     trainer = partial(
-        train_pitch_speller,
+        train_pkspell,
         model,
         epochs,
         lr,
         hidden_dim,
         momentum,
         hidden_dim2,
-        layers,
+        rnn_depth,
         device,
         dropout,
         dropout2,
@@ -314,37 +291,9 @@ def start_experiment(
         mode,
     )
 
-    MODEL = model
-    HIDDEN_DIM = hidden_dim
-    HIDDEN_DIM2 = hidden_dim2
-    LEARNING_RATE = lr
-    RNN_LAYERS = layers
-    DROPOUT = dropout
-    DROPOUT2 = dropout2
-    RNN_CELL = cell
-    OPTIMIZER = optimizer
-    BIDIRECTIONAL = bidirectional
-    MODE = mode
-    BATCH_SIZE = bs
-    from torch.utils.tensorboard import SummaryWriter
-
-    hyperparams_str = f"{RNN_CELL}{MODEL}_{OPTIMIZER}_lr-{LEARNING_RATE}_nlayers-{RNN_LAYERS}_bs-{BATCH_SIZE}_dim-{HIDDEN_DIM}"
-    if HIDDEN_DIM2 is not None:
-        hyperparams_str += f"_dim2-{HIDDEN_DIM2}"
-    hyperparams_str += f"_dropout-{DROPOUT}"
-    if DROPOUT2 is not None and DROPOUT2 > 0:
-        hyperparams_str += f"_dropout2-{DROPOUT2}"
-    hyperparams_str += f"_bidirectional-{BIDIRECTIONAL}_mode_{MODE}"
-    if not augmentation:
-        hyperparams_str += "_noaugment"
-
     def train_dataloader(ds):
         return DataLoader(
-            ds,
-            batch_size=BATCH_SIZE,
-            shuffle=True,
-            collate_fn=pad_collate,
-            num_workers=2,
+            ds, batch_size=bs, shuffle=True, collate_fn=pad_collate, num_workers=2,
         )
 
     def val_dataloader(ds):
@@ -364,11 +313,7 @@ def start_experiment(
             sort=True,
             truncate=None,
         )
-        hyperparams_str += "_all"
-        _, history = trainer(
-            train_dataloader(train_dataset),
-            writer=SummaryWriter(comment="_" + hyperparams_str, flush_secs=20),
-        )
+        _, history = trainer(train_dataloader(train_dataset),)
     else:
         paths = np.array(paths)
         # Divide train and validation set
@@ -395,12 +340,8 @@ def start_experiment(
             transform_key,
             augment_dataset=False,
         )
-        writer = SummaryWriter(comment="_" + hyperparams_str, flush_secs=20)
-        print(hyperparams_str)
         _, history = trainer(
-            train_dataloader(train_dataset),
-            val_dataloader(validation_dataset),
-            writer=writer,
+            train_dataloader(train_dataset), val_dataloader(validation_dataset),
         )
 
 

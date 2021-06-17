@@ -36,11 +36,8 @@ def keep_best_transpositions(full_dict_dataset):
                 ]
                 if len(pieces_to_consider) > 0:
                     dict_dataset.append(pieces_to_consider[np.argmin(n_accidentals)])
-                else:
-                    print("No options for", path, ". Chromatic: ", c)
 
-    # also remove unaccepted ks
-    print("Before removing according to ks:", len(dict_dataset))
+    # also remove unaccepted ks (e.g. ks with more than 7 sharps or flats)
     dict_dataset = [
         e
         for e in dict_dataset
