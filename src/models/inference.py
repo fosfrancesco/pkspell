@@ -18,7 +18,22 @@ from src.data.pytorch_datasets import (
     transform_key,
     pad_collate,
 )
+from src.utils.constants import accepted_pitches, KEY_SIGNATURES
 
+def single_piece_prepare_data(p_list, d_list): 
+    # transform
+    out= transform_pc(p_list, d_list)
+    # reshape in a convenient representation
+    return out.view(-1,1,17)
+
+def single_piece_predict(p_list, d_list, model, device):
+    input = single_piece_prepare_data(p_list, d_list)
+    # reshape in a convenient representation
+    model.eval()
+    with torch.no_grad():
+        input = input.to(device)
+        tpc,ks = model.predict(input,[len(input)])
+    return [accepted_pitches[e] for e in tpc[0]],[KEY_SIGNATURES[e] for e in ks[0]]
 
 def evaluate(model, dataset_path, device=None):
     # load the dataset
@@ -29,14 +44,9 @@ def evaluate(model, dataset_path, device=None):
     for e in full_mdata_dict_dataset:
         e["key_signatures"] = np.zeros(len(e["pitches"]))
     mdata_paths = list(set([e["original_path"] for e in full_mdata_dict_dataset]))
-
-    # print(paths)
     print(len(mdata_paths), "different pieces")
-    print(
-        "Average number of notes: ",
-        np.mean([len(e["midi_number"]) for e in full_mdata_dict_dataset]),
-    )
 
+    # load dataset in pytorch convenient classes
     mdata_dataset = PSDataset(
         full_mdata_dict_dataset,
         mdata_paths,
@@ -126,7 +136,12 @@ def evaluate(model, dataset_path, device=None):
     print("Total errors :", sum([e for e in errors_per_author_pitch.values()]))
     print("Accuracy:")
     print(accuracy_per_author_pitch)
-    print("Error rate:")
+    print(
+        "Total accuracy:",
+        accuracy_score(np.concatenate(all_predicted_pitch), np.concatenate(all_pitches))
+,
+    )
+    print("Error rate (as a percentage):")
     print(
         {
             k: (1 - accuracy_per_author_pitch[k]) * 100
@@ -135,14 +150,14 @@ def evaluate(model, dataset_path, device=None):
     )
 
     print(
-        "Total error rate:",
-        sum(errors_per_author_pitch.values()) / sum(notes_per_author.values()) * 100,
+        "Total error rate (as a percentage):",
+        (1- accuracy_score(np.concatenate(all_predicted_pitch), np.concatenate(all_pitches))) * 100,
     )
 
 
 @click.command()
 @click.option("--model", help="Path to a saved PyTorch .pt model", type=click.Path(exists=True), default=Path("./models/pkspell.pt"))
-@click.option("--dataset", help="Path to one of the datasets", type=click.Path(exists=True), default=Path("./data/processed/musedata.pkl") )
+@click.option("--dataset", help="Path to one of the preprocessed datasets", type=click.Path(exists=True), default=Path("./data/processed/musedata.pkl") )
 @click.option(
     "--device",
     default="cpu",

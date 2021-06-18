@@ -1,4 +1,3 @@
-import pytest
 import torch
 
 from src.data.pytorch_datasets import (

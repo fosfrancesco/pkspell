@@ -17,7 +17,7 @@ def test_PKSpell_single():
         12,
         pitch_to_ix,
         ks_to_ix,
-        n_layers=1,
+        rnn_depth=1,
         cell_type="GRU",
         dropout=None,
         bidirectional=True,

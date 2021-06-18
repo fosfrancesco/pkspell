@@ -218,21 +218,21 @@ def train_pkspell(
 
 # %%
 @click.command()
-@click.option("--model", default="PKSpell", type=str)
+@click.option("--model", help="Either PKSpell or PKSpell_single", default="PKSpell", type=str)
 @click.option("--epochs", default=40, type=int)
-@click.option("--lr", default=0.01, type=float)
+@click.option("--lr", help="Initial learning rate. It will be divided by 10 after half epochs.", default=0.01, type=float)
 @click.option("--momentum", default=0.9, type=float)
 @click.option("--decay", default=1e-4, type=float)
 @click.option("--hidden_dim", default=300, type=int)
 @click.option("--hidden_dim2", default=24, type=int)
 @click.option("--bs", default=32, type=int)
-@click.option("--rnn_depth", default=1, type=int)
+@click.option("--rnn-depth", default=1, type=int)
 @click.option("--device", type=str)
 @click.option("--dropout", default=0.5, type=float)
 @click.option("--dropout2", default=0.5, type=float)
 @click.option("--cell", default="GRU", type=str)
 @click.option("--optimizer", default="Adam", type=str)
-@click.option("--learn_all", is_flag=True, default=False)
+@click.option("--learn-all", is_flag=True, default=False)
 @click.option("--bidirectional", default=True, type=bool)
 @click.option("--mode", default="both", type=str)
 @click.option("--augmentation", default=True, type=bool)
@@ -258,7 +258,7 @@ def start_experiment(
 ):
     print("Loading the augmented ASAP dataset")
     # load the asap datasets with ks
-    with open(Path("./data/processed/asapks.pkl"), "rb") as fid:
+    with open(Path("./data/processed/asap_augmented.pkl"), "rb") as fid:
         full_list_of_dict_dataset = pickle.load(fid)
 
     paths = list(set([e["original_path"] for e in full_list_of_dict_dataset]))
@@ -320,7 +320,6 @@ def start_experiment(
         path_train, path_validation = sklearn.model_selection.train_test_split(
             paths, test_size=0.15, random_state=seed,
         )
-        print(path_validation)
         print("Train and validation lenghts: ", len(path_train), len(path_validation))
         train_dataset = PSDataset(
             list_of_dict_dataset,
