@@ -3,7 +3,7 @@
 A deep learning system for pitch spelling and key signature estimation.
 
 The dependencies are listed in the file [environment.yml](environment.yml).
-If you use conda, you can install the dependencies with: `conda env create -f environment.yml` .
+If you use conda, you can install the dependencies with: `conda env create -f environment.yml` . Apart from python dependencies, git should be installed and accessible to correctly download the asap dataset.
 
 ## Basic Usage
 The systems take as input two lists of equal lengths: 
