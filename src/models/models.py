@@ -15,7 +15,7 @@ class PKSpell_single(nn.Module):
         hidden_dim,
         pitch_to_ix,
         ks_to_ix,
-        n_layers=1,
+        rnn_depth=1,
         cell_type="GRU",
         dropout=None,
         bidirectional=True,
@@ -41,7 +41,7 @@ class PKSpell_single(nn.Module):
             input_size=input_dim,
             hidden_size=hidden_dim // 2 if bidirectional else hidden_dim,
             bidirectional=bidirectional,
-            num_layers=n_layers,
+            num_layers=rnn_depth,
         )
 
         if dropout is not None and dropout > 0:
