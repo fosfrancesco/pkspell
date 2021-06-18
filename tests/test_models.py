@@ -127,6 +127,15 @@ def test_PKSpell_odd_hidden_dim():
         )
 
 
+def test_import_model():
+    # import pkspell
+    model = torch.load(Path("models/pkspell.pt"))
+
+    # import pkspell_single
+    model = torch.load(Path("models/pkspell_single.pt"))
+    assert True
+
+
 def test_import_pretrained_state_dict():
     # import pkspell
     model = PKSpell(17, 300, pitch_to_ix, ks_to_ix, hidden_dim2=24)
@@ -135,4 +144,19 @@ def test_import_pretrained_state_dict():
     # import pkspell_single
     model = PKSpell_single(17, 300, pitch_to_ix, ks_to_ix)
     model.load_state_dict(torch.load(Path("models/pkspell_single_statedict.pt")))
+    assert True
+
+
+from src.models.inference import single_piece_predict
+
+
+def test_single_predict():
+    device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
+
+    model = PKSpell(17, 300, pitch_to_ix, ks_to_ix, hidden_dim2=24)
+    model.load_state_dict(torch.load(Path("models/pkspell_statedict.pt")))
+    p_list = [3, 5, 7, 8, 0, 3, 8, 1, 5, 8, 5, 3, 1, 0, 10, 8]
+    d_list = [1, 1, 1, 3, 1, 1, 3, 1, 1, 1, 1, 1, 1, 1, 1, 3]
+
+    single_piece_predict(p_list, d_list, model, device)
     assert True

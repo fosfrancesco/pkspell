@@ -4,6 +4,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from src.utils.constants import PAD
+from src.data.pytorch_datasets import pitch_to_ix, ks_to_ix
 
 
 class PKSpell_single(nn.Module):
@@ -11,10 +12,10 @@ class PKSpell_single(nn.Module):
 
     def __init__(
         self,
-        input_dim,
-        hidden_dim,
-        pitch_to_ix,
-        ks_to_ix,
+        input_dim=17,
+        hidden_dim=300,
+        pitch_to_ix=pitch_to_ix,
+        ks_to_ix=ks_to_ix,
         rnn_depth=1,
         cell_type="GRU",
         dropout=None,
@@ -122,10 +123,10 @@ class PKSpell(nn.Module):
 
     def __init__(
         self,
-        input_dim,
-        hidden_dim,
-        pitch_to_ix,
-        ks_to_ix,
+        input_dim=17,
+        hidden_dim=300,
+        pitch_to_ix=pitch_to_ix,
+        ks_to_ix=ks_to_ix,
         hidden_dim2=24,
         rnn_depth=1,
         dropout=None,
