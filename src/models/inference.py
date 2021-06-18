@@ -116,10 +116,11 @@ def evaluate(model, dataset_path, device=None):
         notes_per_author[ca] = len(ca_pitches)
 
     print("Pitch Statistics----------------")
+    print("Errors:")
     print(errors_per_author_pitch)
-    print(accuracy_per_author_pitch)
-    print(notes_per_author)
     print("Total errors :", sum([e for e in errors_per_author_pitch.values()]))
+    print("Accuracy:")
+    print(accuracy_per_author_pitch)
     print("Error rate:")
     print(
         {
