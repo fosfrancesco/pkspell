@@ -8,6 +8,7 @@ from torch.utils.data import DataLoader
 from sklearn.metrics import accuracy_score
 from pathlib import Path
 from rich import print
+from rich.progress import Progress
 
 import sys
 
@@ -64,7 +65,7 @@ def evaluate(model, dataset_path, device=None):
         device = (
             torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
         )
-    print(f"[italic]Using device: {device}[/italic]")
+    print(f"[dim]Using device: {device}[/dim]")
     model = model.to(device)
 
     all_inputs = []
@@ -74,21 +75,25 @@ def evaluate(model, dataset_path, device=None):
     all_ks = []
     model.eval()  # Evaluation mode (e.g. disable dropout)
     with torch.no_grad():  # Disable gradient tracking
-        for seqs, pitches, ks, lens in mdata_dataloader:
-            # Move data to device
-            seqs = seqs.to(device)
+        with Progress() as progress: 
+            task = progress.add_task(f"[yellow]Performing predictions for {dataset_path}[/yellow]", total=len(mdata_dataloader))
+            for seqs, pitches, ks, lens in mdata_dataloader:
+                # Move data to device
+                seqs = seqs.to(device)
+    
+                # Predict the model's output on a batch.
+                predicted_pitch, predicted_ks = model.predict(seqs, lens)
+                # Update the evaluation statistics.
+                for i, p in enumerate(predicted_pitch):
+                    all_inputs.append(
+                        torch.argmax(seqs[0 : int(lens[i]), i, :].cpu(), 1).numpy()
+                    )
+                    all_predicted_pitch.append(p)
+                    all_predicted_ks.append(predicted_ks[i])
+                    all_pitches.append(pitches[0 : int(lens[i]), i])
+                    all_ks.append(ks[0 : int(lens[i]), i])
 
-            # Predict the model's output on a batch.
-            predicted_pitch, predicted_ks = model.predict(seqs, lens)
-            # Update the evaluation statistics.
-            for i, p in enumerate(predicted_pitch):
-                all_inputs.append(
-                    torch.argmax(seqs[0 : int(lens[i]), i, :].cpu(), 1).numpy()
-                )
-                all_predicted_pitch.append(p)
-                all_predicted_ks.append(predicted_ks[i])
-                all_pitches.append(pitches[0 : int(lens[i]), i])
-                all_ks.append(ks[0 : int(lens[i]), i])
+                progress.update(task, advance=1.0)
 
     # Divide accuracy according to author
     authors = []
