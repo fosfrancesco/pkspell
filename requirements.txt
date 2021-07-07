@@ -7,3 +7,4 @@ music21~=6.7.1
 click>=8.0.1
 pandas~=1.3.0
 tqdm>=4.61.1
+rich>=10.5.0

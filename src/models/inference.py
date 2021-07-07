@@ -7,6 +7,7 @@ import os
 from torch.utils.data import DataLoader
 from sklearn.metrics import accuracy_score
 from pathlib import Path
+from rich import print
 
 import sys
 
@@ -44,7 +45,6 @@ def evaluate(model, dataset_path, device=None):
     for e in full_mdata_dict_dataset:
         e["key_signatures"] = np.zeros(len(e["pitches"]))
     mdata_paths = list(set([e["original_path"] for e in full_mdata_dict_dataset]))
-    print(len(mdata_paths), "different pieces")
 
     # load dataset in pytorch convenient classes
     mdata_dataset = PSDataset(
@@ -64,7 +64,7 @@ def evaluate(model, dataset_path, device=None):
         device = (
             torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
         )
-    print(f"Using device: {device}")
+    print(f"[italic]Using device: {device}[/italic]")
     model = model.to(device)
 
     all_inputs = []
@@ -94,7 +94,6 @@ def evaluate(model, dataset_path, device=None):
     authors = []
 
     for sequence in all_inputs:
-        #     print(sequence)
         author = [
             e["original_path"].split(os.sep)[-1][:3]
             for e in full_mdata_dict_dataset
@@ -105,7 +104,6 @@ def evaluate(model, dataset_path, device=None):
         authors.append(author[0])
 
     considered_authors = list(set(authors))
-    print(considered_authors)
 
     errors_per_author_pitch = {}
     accuracy_per_author_pitch = {}
@@ -130,17 +128,16 @@ def evaluate(model, dataset_path, device=None):
         )
         notes_per_author[ca] = len(ca_pitches)
 
-    print("Pitch Statistics----------------")
-    print("Errors:")
-    print(errors_per_author_pitch)
-    print("Total errors :", sum([e for e in errors_per_author_pitch.values()]))
+    accuracy = accuracy_score(np.concatenate(all_predicted_pitch), np.concatenate(all_pitches))
+    print("[bold underline]Pitch Statistics[/bold underline]")
+    print(f"[italic]{len(mdata_paths)} different pieces[/italic]")
+    print(f"[bold]Total errors: [red]{sum([e for e in errors_per_author_pitch.values()])}[/bold][/red]")
+    print(f"[bold green]Total accuracy: {100 * accuracy:.3f}%[/bold green]")
+    print(f"Total error rate (as a percentage): [red]{(1 - accuracy) * 100:.3f}%[/red]")
+    print(f"Errors per author: {errors_per_author_pitch}")
+
     print("Accuracy:")
     print(accuracy_per_author_pitch)
-    print(
-        "Total accuracy:",
-        accuracy_score(np.concatenate(all_predicted_pitch), np.concatenate(all_pitches))
-,
-    )
     print("Error rate (as a percentage):")
     print(
         {
@@ -149,10 +146,6 @@ def evaluate(model, dataset_path, device=None):
         }
     )
 
-    print(
-        "Total error rate (as a percentage):",
-        (1- accuracy_score(np.concatenate(all_predicted_pitch), np.concatenate(all_pitches))) * 100,
-    )
 
 
 @click.command()
