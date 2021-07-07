@@ -4,6 +4,12 @@ A deep learning system for pitch spelling and key signature estimation.
 
 ## Setup
 
+Dependencies can be installed either using `pip` (it is recommended to use a virtuel environment) or using `conda`.
+
+### pip
+
+You can install everything needed using: `pip install -r requirements.txt`, preferably inside a virtual environment.
+
 ### Conda 
 
 The dependencies are listed in the file [environment.yml](environment.yml).
