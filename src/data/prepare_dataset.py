@@ -5,6 +5,8 @@ import music21 as m21
 import pandas as pd
 import pickle
 
+from tqdm import tqdm
+
 sys.path.append(str(Path(__file__).resolve().parents[2]))
 from src.utils.constants import accepted_pitches, accepted_intervals
 
@@ -174,10 +176,10 @@ def main(raw_folder, processed_folder, process_asap, process_musedata):
             raise Exception(
                 "There must be a folder named 'opnd-m-noisy', inside" + str(raw_folder)
             )
-        for ifile, file in enumerate(musedata_basepath.iterdir()):
+        for ifile, file in enumerate(tqdm(musedata_basepath.iterdir())):
             with open(file, "r") as f:
                 file_content = f.read()
-            print("Processing file", ifile, str(file))
+            tqdm.write(f"Processing file {ifile}: {str(file)}")
             strings_list = list(parenthetic_contents(file_content))
             quadruples_list = [s.split(" ") for s in strings_list]
             # sort by start input and pitch
@@ -224,8 +226,8 @@ def main(raw_folder, processed_folder, process_asap, process_musedata):
         df = df.drop_duplicates(subset=["title", "composer"])
         xml_score_paths = list(df["xml_score"])
         asap_list_of_dict = []
-        for i, path in enumerate(xml_score_paths):
-            print("About to process", path)
+        for i, path in enumerate(tqdm(xml_score_paths)):
+            tqdm.write(f"About to process {path}")
             score = m21.converter.parse(Path(asap_basepath, path))
             # generate the transpositions for the piece. This takes a lot of time unfortunately.
             all_scores = transp_score(score)
