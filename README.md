@@ -4,7 +4,7 @@ A deep learning system for pitch spelling and key signature estimation.
 
 ## Setup
 
-Dependencies can be installed either using `pip` (it is recommended to use a virtuel environment) or using `conda`.
+Dependencies can be installed either using `pip` (it is recommended to use a virtual environment) or using `conda`. Moreover, git must be installed and accessible to correctly download the asap dataset.
 
 ### pip
 
@@ -32,7 +32,7 @@ A complete code example is contained in [notebooks/usage_example.ipynb](notebook
 To retrain the model of the paper from the ASAP dataset:
 1. Run `python src/data/download_dataset.py` .
 1. Run `python src/data/prepare_dataset.py` (this can take some time, especially on slower hardware).
-1. Run `python src/models/train.py`. Use the ``--device cuda`` flag for faster training (requires an NVIDIA GPU at the moment).
+1. Run `python src/models/train.py`. Use the ``--device cuda`` flag for faster training (requires an NVIDIA GPU).
 1. The model is saved in `models/temp` .
 
 
