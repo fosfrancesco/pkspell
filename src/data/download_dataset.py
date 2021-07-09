@@ -7,7 +7,8 @@ import sys
 from io import BytesIO
 from urllib.request import urlopen
 from zipfile import ZipFile
-
+from rich import print
+from rich.progress import Progress
 
 sys.path.append(str(Path(__file__).resolve().parents[2]))
 from src.utils.constants import ASAP_URL
@@ -21,18 +22,22 @@ def main(folder):
     path.mkdir(parents=True, exist_ok=True)
 
     # Download ASAP dataset from github.
-    print("Downloading asap dataset for training")
+    print("Downloading ASAP dataset for training")
     asap_path = Path(folder, "asap-dataset")
-    subprocess.run(["git", "clone", ASAP_URL, str(asap_path)])
-
+    with Progress() as progress:
+        clone = progress.add_task(f"[yellow]Cloning ASAP from [dim]{ASAP_URL}[/dim]")
+        subprocess.run(["git", "clone", "--quiet", ASAP_URL, str(asap_path)])
+        progress.update(clone, advance=100)
+    
     # download MuseData noisy dataset from David Meredith http://www.titanmusic.com/data.php
-    print(
-        "Downloading noisy musedata dataset (http://www.titanmusic.com/data.php) for evaluation"
-    )
+    print("Downloading noisy MuseData dataset [dim](http://www.titanmusic.com/data.php)[/dim] for evaluation")
     zipurl = "http://www.titanmusic.com/data/dphil/opnd-m-noisy.zip"
-    with urlopen(zipurl) as zipresp:
-        with ZipFile(BytesIO(zipresp.read())) as zfile:
-            zfile.extractall(Path(folder))
+    with Progress() as progress:
+        musedata = progress.add_task(f"[yellow]Downloading MuseData")
+        with urlopen(zipurl) as zipresp:
+            with ZipFile(BytesIO(zipresp.read())) as zfile:
+                zfile.extractall(Path(folder))
+        progress.update(musedata, advance=100)
 
 
 if __name__ == "__main__":

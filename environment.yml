@@ -53,11 +53,14 @@ dependencies:
   - olefile=0.46=py37_0
   - openh264=2.1.0=hd408876_0
   - openssl=1.1.1k=h7f98852_0
+  - pandas=1.2.5=py37h295c915_0
   - pillow=8.2.0=py37he98fc37_0
   - pip=21.1.2=py37h06a4308_0
   - python=3.7.10=h12debd9_4
+  - python-dateutil=2.8.1=pyhd3eb1b0_0
   - python_abi=3.7=1_cp37m
   - pytorch=1.9.0=py3.7_cuda10.2_cudnn7.6.5_0
+  - pytz=2021.1=pyhd3eb1b0_0
   - readline=8.1=h27cfd23_0
   - scikit-learn=0.24.2=py37h18a542f_0
   - scipy=1.6.3=py37h29e03ee_0
@@ -68,6 +71,7 @@ dependencies:
   - tk=8.6.10=hbc83047_0
   - torchaudio=0.9.0=py37
   - torchvision=0.10.0=py37_cu102
+  - tqdm=4.61.2=pyhd8ed1ab_1
   - typing_extensions=3.7.4.3=pyha847dfd_0
   - wheel=0.36.2=pyhd3eb1b0_0
   - xz=5.2.5=h7b6447c_0
@@ -76,7 +80,12 @@ dependencies:
   - zstd=1.4.9=haebb681_0
   - pip:
     - chardet==4.0.0
+    - colorama==0.4.4
+    - commonmark==0.9.1
     - kmeans1d==0.3.1
     - more-itertools==8.8.0
     - music21==6.7.1
+    - pygments==2.9.0
+    - rich==10.5.0
     - webcolors==1.11.1
+prefix: /users/f/foscarif/anaconda3/envs/pkspell
