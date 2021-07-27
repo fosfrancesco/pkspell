@@ -45,7 +45,7 @@ The evaluation for the key-signature estimation task is not available, as the da
 
 
 ## Citing
-If you use this dataset in any research, please cite the relevant paper:
+If you use this dataset in any research, please cite the relevant [paper](https://hal.archives-ouvertes.fr/hal-03300102):
 
 ```
 @inproceedings{pkspell,
@@ -53,7 +53,6 @@ If you use this dataset in any research, please cite the relevant paper:
   author={Foscarin, Francesco and Audebert, Nicolas  and Fournier S'niehotta, Raphaël},
   booktitle={International Society for Music Information Retrieval Conference {(ISMIR)}},
   year={2021},
-  pages={xxx--xxx}
 }
 ```
 
