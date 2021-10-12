@@ -66,4 +66,4 @@ def pkspell_score(input_path, output_path, device):
 
 
 if __name__ == "__main__":
-    process_score()
+    pkspell_score()
