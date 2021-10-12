@@ -8,7 +8,7 @@ A deep learning system for pitch spelling and key signature estimation. It can w
 
 Dependencies can be installed using `pip` (it is recommended to use a virtual environment with Python>=3.7) with the command `pip install -r requirements.txt`. 
 
-We suggest to manually install PyTorch following the instructions in the [website](https://pytorch.org/get-started/locally/) to correctly install the cpu or CUDA version.
+We suggest to manually install PyTorch following the instructions in the [website](https://pytorch.org/get-started/locally/) to select the cpu or CUDA version.
 Moreover, git must be installed and accessible to correctly download the asap dataset.
 
 ## Basic Usage
