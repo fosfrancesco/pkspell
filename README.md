@@ -43,7 +43,7 @@ The evaluation for the key-signature estimation task is not available, as the da
 
 
 ## Citing
-If you use this dataset in any research, please cite the relevant [paper](https://hal.archives-ouvertes.fr/hal-03300102):
+If you use this approach in any research, please cite the relevant [paper](https://hal.archives-ouvertes.fr/hal-03300102):
 
 ```
 @inproceedings{pkspell,
